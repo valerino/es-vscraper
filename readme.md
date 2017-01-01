@@ -27,6 +27,7 @@ def run_direct_url(u, img_index=0, img_cover=False):
   :param u: the game url
   :param img_index: 0-based index of the image to download, default 0
   :param img_cover: True to download boxart cover as image, default False. If boxart is not available, the first image found is used
+  :param params: engine params (name=value,[name=value]), default None
   :return: dictionary { name, publisher, developer, genre, releasedate, desc, png_img_buffer } (each may be empty)
   """
 
@@ -36,6 +37,7 @@ def run(to_search, img_index=0, img_cover=False):
   :param to_search: the game title
   :param img_index: 0-based index of the image to download, default 0
   :param img_cover: True to download boxart cover as image, default False. If boxart is not available, the first image found is used
+  :param params: engine params (name=value,[name=value]), default None
   :return: dictionary { name, publisher, developer, genre, releasedate, desc, png_img_buffer } (each may be empty)
   """
 
@@ -62,6 +64,12 @@ def system_short():
   the related system (short)
   :return: string (i.e. 'c64')
   """
+
+def engine_help():
+  """
+  engine specific options to be used with '--engine_params'
+  :return: string
+  """
 ~~~~
 
 . internal implementation is up to the plugin
@@ -78,37 +86,38 @@ usage
 ~~~~
 usage: Build gamelist.xml for EmulationStation by querying online databases
 
-       [-h] [--list_engines] [--engine [ENGINE]] [--to_search [TO_SEARCH]]
+       [-h] [--list_engines] [--engine [ENGINE]]
+       [--engine_params [ENGINE_PARAMS]] [--to_search [TO_SEARCH]]
        [--path [PATH]] [--gamelist_path [GAMELIST_PATH]]
        [--img_path [IMG_PATH]] [--img_index [IMG_INDEX]] [--img_cover]
        [--unattended] [--debug]
 
-
-       optional arguments:
-         -h, --help            show this help message and exit
-         --list_engines        list the available engines
-         --engine [ENGINE]     the engine to use (use --list_engines to check
-                               available engines)
-         --to_search [TO_SEARCH]
-                               the game to search for (full or sub-string), case
-                               insensitive, enclosed in " " (i.e. "game")
-         --path [PATH]         path to the single game file or path to games folder
-         --gamelist_path [GAMELIST_PATH]
-                               path to gamelist.xml (default "./gamelist.xml", will
-                               be created if not found or appended to)
-         --img_path [IMG_PATH]
-                               path to the folder where to store images (default
-                               "./images")
-         --img_index [IMG_INDEX]
-                               download image at 0-based index among available images
-                               (default 0, first found)
-         --img_cover           try to download boxart cover if available, either it
-                               will download the first image found
-         --unattended          Automatically choose the first found entry in case of
-                               multiple entries found (default False, asks on
-                               multiple choices)
-         --debug               Print scraping result on the console
-
+optional arguments:
+  -h, --help            show this help message and exit
+  --list_engines        list the available engines (and their options, if any)
+  --engine [ENGINE]     the engine to use (use --list_engines to check
+                        available engines)
+  --engine_params [ENGINE_PARAMS]
+                        custom engine parameters, name=value[,name=value]
+  --to_search [TO_SEARCH]
+                        the game to search for (full or sub-string), case
+                        insensitive, enclosed in " " (i.e. "game")
+  --path [PATH]         path to the single game file or path to games folder
+  --gamelist_path [GAMELIST_PATH]
+                        path to gamelist.xml (default "./gamelist.xml", will
+                        be created if not found or appended to)
+  --img_path [IMG_PATH]
+                        path to the folder where to store images (default
+                        "./images")
+  --img_index [IMG_INDEX]
+                        download image at 0-based index among available images
+                        (default 0, first found)
+  --img_cover           try to download boxart cover if available, either it
+                        will download the first image found
+  --unattended          Automatically choose the first found entry in case of
+                        multiple entries found (default False, asks on
+                        multiple choices)
+  --debug               Print scraping result on the console
 ~~~~
 
 sample usage

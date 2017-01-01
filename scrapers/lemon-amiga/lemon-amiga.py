@@ -94,12 +94,13 @@ def _download_descr(soup, u):
             return ''
 
 
-def run_direct_url(u, img_index=0, img_cover=False):
+def run_direct_url(u, img_index=0, img_cover=False, params=None):
     """
     perform query with the given direct url
     :param u: the game url
     :param img_index: 0-based index of the image to download, default 0
     :param img_cover: True to download boxart cover as image, default False. If boxart is not available, the first image found is used
+    :param params: engine params (name=value,[name=value]), default None
     :return: dictionary { name, publisher, developer, genre, releasedate, desc, png_img_buffer } (each may be empty)
     """
     # issue request
@@ -170,12 +171,13 @@ def _check_response(reply):
     return choices
 
 
-def run(to_search, img_index=0, img_cover=False):
+def run(to_search, img_index=0, img_cover=False, params=None):
     """
     perform query with the given game title
     :param to_search: the game title
     :param img_index: 0-based index of the image to download, default 0
     :param img_cover: True to download boxart cover as image, default False. If boxart is not available, the first image found is used
+    :param params: engine params (name=value,[name=value]), default None
     :return: dictionary { name, publisher, developer, genre, releasedate, desc, png_img_buffer } (each may be empty)
     """
     # get game id
@@ -226,3 +228,11 @@ def system_short():
     :return: string (i.e. 'c64')
     """
     return 'amiga'
+
+
+def engine_help():
+    """
+    engine specific options to be used with '--engine_params'
+    :return: string
+    """
+    return ''

@@ -94,7 +94,7 @@ def scrape_title(engine, args):
     """
     try:
         print('Downloading data for %s' % args.to_search)
-        game_info = engine.run(args.to_search, args.img_index, args.img_cover)
+        game_info = engine.run(args.to_search, args.img_index, args.img_cover, args.engine_params)
     except vscraper_utils.GameNotFoundException as e:
         print('Cannot find %s on %s' % (args.to_search, engine.name()))
         raise e
@@ -115,7 +115,7 @@ def scrape_title(engine, args):
         # reissue with the correct entry
         c = e.choices()[int(res) - 1]
         print('Downloading data for %s: %s, %s, %s' % (args.to_search, c['name'], c['publisher'], c['year']))
-        game_info = engine.run_direct_url(c['url'], args.img_index, args.img_cover)
+        game_info = engine.run_direct_url(c['url'], args.img_index, args.img_cover, args.engine_params)
 
     if game_info['img_buffer'] is not None:
         # store image, ensuring folder exists
@@ -157,8 +157,9 @@ def scrape_title(engine, args):
 
 def main():
     parser = argparse.ArgumentParser('Build gamelist.xml for EmulationStation by querying online databases\n')
-    parser.add_argument('--list_engines', help="list the available engines", action='store_const', const=True)
+    parser.add_argument('--list_engines', help="list the available engines (and their options, if any)", action='store_const', const=True)
     parser.add_argument('--engine', help="the engine to use (use --list_engines to check available engines)", nargs='?')
+    parser.add_argument('--engine_params', help="custom engine parameters, name=value[,name=value]", nargs='?')
     parser.add_argument('--to_search',
                         help='the game to search for (full or sub-string), case insensitive, enclosed in " " (i.e. "game")',
                         nargs='?')
@@ -192,6 +193,12 @@ def main():
         print('Available scrapers:')
         for s in scrapers:
             print('%s (System: %s (%s), url: %s)' % (s.name(), s.system(), s.system_short(), s.url()))
+            h = s.engine_help()
+            if len(h) > 0:
+                print('available options:')
+                print(h)
+            print()
+
         exit(0)
 
     if args.engine is None or args.path is None:

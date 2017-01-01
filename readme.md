@@ -1,0 +1,120 @@
+what it is
+----------
+es-vscraper is an extensible scraper for EmulationStation.
+
+This is a personal project made just for myself (at the moment), since i don't like the available scrapers.
+
+It is meant to be used on PC, updating existing gamelist.xml by searching single game for small game collections (need to check with each database provider for permission to implement directory-tree scanning (might be too heavy for their traffic).
+
+It should work directly on RaspberryPI, anyway, assuming the needed
+python3 and modules are installed
+
+dependencies
+------------
+~~~~
+sudo pip3 install requests Image bs4 lxml
+~~~~
+
+how to write a plugin
+---------------------
+. create subdirectory in 'scrapers', named 'name-system' (i.e. 'lemon-amiga')
+
+. implement 'name-system.py' module (i.e. 'scrapers/lemon-amiga.py')
+
+. each plugin must implement the following functions:
+~~~~
+def run_direct_url(u, img_index=0, img_cover=False):
+  """
+  perform query with the given direct url
+  :param u: the game url
+  :param img_index: 0-based index of the image to download, default 0
+  :param img_cover: True to download boxart cover as image, default False. If boxart is not available, the first image found is used
+  :return: dictionary { name, publisher, developer, genre, releasedate, desc, png_img_buffer } (each may be empty)
+  """
+
+def run(to_search, img_index=0, img_cover=False):
+  """
+  perform query with the given game title
+  :param to_search: the game title
+  :param img_index: 0-based index of the image to download, default 0
+  :param img_cover: True to download boxart cover as image, default False. If boxart is not available, the first image found is used
+  :return: dictionary { name, publisher, developer, genre, releasedate, desc, png_img_buffer } (each may be empty)
+  """
+
+def name():
+  """
+  the plugin name
+  :return: string (i.e. 'lemon64')
+  """
+
+def url():
+  """
+  the plugin url name
+  :return: string (i.e. 'http://www.lemon64.com')
+  """
+
+def system():
+    """
+    the related system (descriptive)
+    :return: string (i.e. 'Commodore 64')
+    """
+    return 'Commodore 64'
+
+  def system_short():
+      """
+      the related system (short)
+      :return: string (i.e. 'c64')
+      """
+~~~~
+
+. internal implementation is up to the plugin
+
+usage
+-----
+~~~~
+usage: Build gamelist.xml for EmulationStation by querying online databases
+
+       [-h] [--list_engines] [--engine [ENGINE]] [--to_search [TO_SEARCH]]
+       [--path [PATH]] [--gamelist_path [GAMELIST_PATH]]
+       [--img_path [IMG_PATH]] [--img_index [IMG_INDEX]] [--img_cover]
+       [--unattended]
+
+optional arguments:
+  -h, --help            show this help message and exit
+  --list_engines        list the available engines
+  --engine [ENGINE]     the engine to use (use --list_engines to check
+                        available engines)
+  --to_search [TO_SEARCH]
+                        the game to search for (full or sub-string), case
+                        insensitive, enclosed in " " (i.e. "game")
+  --path [PATH]         path to the single game file or path to games folder
+  --gamelist_path [GAMELIST_PATH]
+                        path to gamelist.xml (default "./gamelist.xml", will
+                        be created if not found or appended to)
+  --img_path [IMG_PATH]
+                        path to the folder where to store images (default
+                        "./images")
+  --img_index [IMG_INDEX]
+                        download image at 0-based index among available
+                        images (default 0, first found)
+  --img_cover           try to download boxart cover if available, either it
+                        will download the first image found
+  --unattended          Always choose the first found entry in case of
+                        multiple entries found (default False, asks on multiple choices)
+~~~~
+
+currently implemented modules
+-----------------------------
+. Commodore Amiga
+- Lemon (http://www.lemonamiga.com)
+
+. Commodore 64
+- Lemon (http://www.lemon64.com)
+
+todo
+----
+. Untested at the moment (need to get my hands on my raspi with EmulationStation as soon as i get back from holidays :) )
+
+. At the moment, only works for single game ('path' must be a game file). Need to check with each database provider for permission to implement directory-tree scanning (might be too heavy for their traffic)
+
+. Implement more systems :)

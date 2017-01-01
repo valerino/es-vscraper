@@ -12,9 +12,11 @@ python3 and modules are installed.
 dependencies
 ------------
 ~~~~
-sudo apt-get install python3 pip3
+sudo apt-get install python3 python3-pip3
 sudo pip3 install requests Image bs4 lxml
 ~~~~
+
+on osx/windows, install python3 separately then install the dependencies with pip3 as normal
 
 how to write a plugin
 ---------------------

@@ -50,6 +50,7 @@ def _download_image(soup, img_index=0, img_cover=False):
     except:
         return None
 
+
 def _download_descr(soup):
     """
     download description/review

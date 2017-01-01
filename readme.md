@@ -69,6 +69,11 @@ def system_short():
 
 . internal implementation is up to the plugin
 
+note
+----
+es-vscraper needs correctly named game files (i.e. 'bubble bobble.bin'), i don't like hash-based systems since a variation in the hash leads to no hits most of the times (unless you download specific rom-sets, which is not an
+option for me, too much wasted time!).
+
 usage
 -----
 ~~~~

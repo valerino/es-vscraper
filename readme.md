@@ -2,12 +2,7 @@ what it is
 ----------
 es-vscraper is an extensible scraper for [EmulationStation](https://github.com/Aloshi/EmulationStation).
 
-This is a personal project made just for myself (at the moment), since i don't like the available scrapers.
-
-At the moment it is meant to be used for creating/updating existing gamelist.xml by searching for single games (need to check with each database provider for permission to implement directory-tree scanning, might be too heavy for their traffic).
-
-It should work directly on RaspberryPI, anyway, assuming the needed
-python3 and modules are installed.
+This is a personal project made just for myself (at the moment), since i don't like the available hash-only-based scrapers.
 
 dependencies
 ------------
@@ -71,8 +66,10 @@ def system_short():
 
 . internal implementation is up to the plugin
 
-note
+notes
 ----
+At the moment it is meant to be used for creating/updating existing gamelist.xml by searching for single games (need to check with each database provider for permission to implement directory-tree scanning, might be too heavy for their traffic).
+
 es-vscraper needs correctly named game files (i.e. 'bubble bobble.bin'), i don't like hash-based systems since a variation in the hash leads to no hits most of the times (unless you download specific rom-sets, which is not an
 option for me, too much wasted time!).
 

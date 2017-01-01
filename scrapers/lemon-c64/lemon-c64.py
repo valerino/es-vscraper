@@ -67,13 +67,23 @@ def _download_descr(soup):
         html = reply.content
 
         # parse desc
-        soup = BeautifulSoup(html, 'html.parser')
-        descr = soup.find('td', 'tablecolor').text.strip()
+        s = BeautifulSoup(html, 'html.parser')
+        descr = s.find('td', 'tablecolor').text.strip()
         descr = descr[:descr.rfind('Downloads:')]
         return descr
     except:
-        # no review
-        return ''
+        # no review, try comments
+        try:
+            r = re.search('(.+=)([0-9]+)', soup.find('link', rel='canonical').attrs['href'])
+            gameid = r.group(2)
+            reply = requests.get('http://www.lemon64.com/games/comments/text.php?gameID=%s' % gameid)
+            html = reply.content
+            s = BeautifulSoup(html, 'html.parser')
+            tds = s.find_all(target='content')
+            descr = tds[0].next_sibling.next_sibling.text.strip()
+            return descr
+        except:
+            return ''
 
 
 def run_direct_url(u, img_index=0, img_cover=False):
@@ -109,15 +119,17 @@ def run_direct_url(u, img_index=0, img_cover=False):
 
     # developer
     vscraper_utils.add_text_from_href(soup, 'list.php?coder', game_info, 'developer')
+    if game_info['developer'] == '':
+        vscraper_utils.add_text_from_href(soup, 'list.php?developer', game_info, 'developer')
 
     # genre
     vscraper_utils.add_text_from_href(soup, 'list.php?genre', game_info, 'genre')
 
-    # image
-    game_info['img_buffer'] = _download_image(soup, img_index, img_cover)
-
     # description
     game_info['desc'] = _download_descr(soup)
+
+    # image
+    game_info['img_buffer'] = _download_image(soup, img_index, img_cover)
 
     return game_info
 

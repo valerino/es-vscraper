@@ -57,10 +57,12 @@ def _download_image(soup, u, img_index=0, img_cover=False):
     except:
         return None
 
-def _download_descr(soup):
+
+def _download_descr(soup, u):
     """
     download description/review
     :param soup: the html
+    :param u: the game url
     :return: description/review
     """
 
@@ -73,12 +75,23 @@ def _download_descr(soup):
         html = reply.content
 
         # parse desc
-        soup = BeautifulSoup(html, 'html.parser')
-        descr = soup.find_all('td')[22].text.strip()
+        s = BeautifulSoup(html, 'html.parser')
+        descr = s.find_all('td')[22].text.strip()
         return descr
     except:
-        # no review
-        return ''
+        # no review, try comments
+        try:
+            r = re.search('(.+=)([0-9]+)', u)
+            gameid = r.group(2)
+            reply = requests.get('http://www.lemonamiga.com/games/comments/text.php?game_id=%s' % gameid)
+            html = reply.content
+            s = BeautifulSoup(html, 'html.parser')
+            spans = s.find_all('span')
+            sib = spans[0].next_sibling
+            descr = sib.contents[0].strip()
+            return descr
+        except:
+            return ''
 
 
 def run_direct_url(u, img_index=0, img_cover=False):
@@ -118,11 +131,11 @@ def run_direct_url(u, img_index=0, img_cover=False):
     # genre
     vscraper_utils.add_text_from_href(soup, 'list.php?list_genre', game_info, 'genre')
 
+    # description
+    game_info['desc'] = _download_descr(soup, u)
+
     # image
     game_info['img_buffer'] = _download_image(soup, u, img_index, img_cover)
-
-    # description
-    game_info['desc'] = _download_descr(soup)
 
     return game_info
 

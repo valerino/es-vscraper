@@ -150,7 +150,7 @@ def scrape_title(engine, args):
     vscraper_utils.write_to_file(args.gamelist_path, s)
 
     print('Successfully processed "%s": %s (%s)' % (args.to_search, game_info['name'], args.path))
-    # print(game_info)
+    print(game_info)
 
 
 def main():

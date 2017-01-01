@@ -4,7 +4,7 @@ es-vscraper is an extensible scraper for [EmulationStation](https://github.com/A
 
 This is a personal project made just for myself (at the moment), since i don't like the available scrapers.
 
-At the moment it is meant to be used on PC, creating/updating existing gamelist.xml by searching single games for small game collections (need to check with each database provider for permission to implement directory-tree scanning, might be too heavy for their traffic).
+At the moment it is meant to be used for creating/updating existing gamelist.xml by searching for single games (need to check with each database provider for permission to implement directory-tree scanning, might be too heavy for their traffic).
 
 It should work directly on RaspberryPI, anyway, assuming the needed
 python3 and modules are installed.

@@ -126,7 +126,11 @@ def run_direct_url(u, img_index=0, img_cover=False):
     vscraper_utils.add_text_from_href(soup, 'list.php?list_year', game_info, 'releasedate')
 
     # developer
-    vscraper_utils.add_text_from_href(soup, 'list.php?list_people', game_info, 'developer')
+    devs = soup.find('td', text='Coder:')
+    if devs is None:
+        game_info['developer'] = ''
+    else:
+        vscraper_utils.add_text_from_href(devs.next_sibling, 'list.php?list_people', game_info, 'developer')
 
     # genre
     vscraper_utils.add_text_from_href(soup, 'list.php?list_genre', game_info, 'genre')

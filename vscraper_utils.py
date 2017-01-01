@@ -1,6 +1,23 @@
+"""
+es-vscraper utilities
+
+MIT-LICENSE
+
+Copyright 2017, Valerio 'valerino' Lupi <xoanino@gmail.com>
+
+Permission is hereby granted, free of charge, to any person obtaining a copy of this software and associated documentation files (the "Software"), to deal in the Software without restriction,
+including without limitation the rights to use, copy, modify, merge, publish, distribute, sublicense, and/or sell copies of the Software, and to permit persons to whom the Software is furnished
+to do so, subject to the following conditions:
+
+The above copyright notice and this permission notice shall be included in all copies or substantial portions of the Software.
+
+THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT.
+IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE
+OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
+"""
+
 import io
 from PIL import Image
-from bs4 import BeautifulSoup
 
 
 class MultipleChoicesException(Exception):
@@ -25,6 +42,32 @@ class GameNotFoundException(Exception):
     raised when a game is not found
     """
     pass
+
+
+def add_disk(s, disk_num):
+    """
+    append disk number to string
+    :param s: the string
+    :param disk_num: the disk number (string)
+    :return: the new string
+    """
+    ss = '%s (Disk %s)' % (s, disk_num)
+    return ss
+
+
+def get_parameter(params, name):
+    """
+    get parameter from csv string of name=value
+    :param params: name=value[,name=value,...]
+    :param name: parameter name
+    :return: the value
+    """
+    l = params.split(',')
+    for ll in l:
+        s = ll.split('=')
+        if s[0].lower() == name:
+            return s[1]
+    return ''
 
 
 def find_href(root, substring):

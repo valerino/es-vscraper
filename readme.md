@@ -21,23 +21,23 @@ how to write a plugin
 
 . each plugin must implement the following functions:
 ~~~~
-def run_direct_url(u, img_index=0, img_cover=False):
+def run_direct_url(u, img_index=0, img_cover=False, engine_params=None):
   """
   perform query with the given direct url
   :param u: the game url
   :param img_index: 0-based index of the image to download, default 0
   :param img_cover: True to download boxart cover as image, default False. If boxart is not available, the first image found is used
-  :param params: engine params (name=value,[name=value]), default None
+  :param engine_params: engine params (name=value[,name=value,...]), default None
   :return: dictionary { name, publisher, developer, genre, releasedate, desc, png_img_buffer } (each may be empty)
   """
 
-def run(to_search, img_index=0, img_cover=False):
+def run(to_search, img_index=0, img_cover=False, engine_params=None):
   """
   perform query with the given game title
   :param to_search: the game title
   :param img_index: 0-based index of the image to download, default 0
   :param img_cover: True to download boxart cover as image, default False. If boxart is not available, the first image found is used
-  :param params: engine params (name=value,[name=value]), default None
+  :param engine_params: engine params (name=value[,name=value,...]), default None
   :return: dictionary { name, publisher, developer, genre, releasedate, desc, png_img_buffer } (each may be empty)
   """
 
@@ -98,7 +98,7 @@ optional arguments:
   --engine [ENGINE]     the engine to use (use --list_engines to check
                         available engines)
   --engine_params [ENGINE_PARAMS]
-                        custom engine parameters, name=value[,name=value]
+                        custom engine parameters, name=value[,name=value,...], default no parameters
   --to_search [TO_SEARCH]
                         the game to search for (full or sub-string), case
                         insensitive, enclosed in " " (i.e. "game")

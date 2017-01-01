@@ -1,6 +1,19 @@
 """
 es-vscraper module for http://www.lemonamiga.com
 
+MIT-LICENSE
+
+Copyright 2017, Valerio 'valerino' Lupi <xoanino@gmail.com>
+
+Permission is hereby granted, free of charge, to any person obtaining a copy of this software and associated documentation files (the "Software"), to deal in the Software without restriction,
+including without limitation the rights to use, copy, modify, merge, publish, distribute, sublicense, and/or sell copies of the Software, and to permit persons to whom the Software is furnished
+to do so, subject to the following conditions:
+
+The above copyright notice and this permission notice shall be included in all copies or substantial portions of the Software.
+
+THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT.
+IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE
+OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 """
 import re
 
@@ -94,13 +107,13 @@ def _download_descr(soup, u):
             return ''
 
 
-def run_direct_url(u, img_index=0, img_cover=False, params=None):
+def run_direct_url(u, img_index=0, img_cover=False, engine_params=None):
     """
     perform query with the given direct url
     :param u: the game url
     :param img_index: 0-based index of the image to download, default 0
     :param img_cover: True to download boxart cover as image, default False. If boxart is not available, the first image found is used
-    :param params: engine params (name=value,[name=value]), default None
+    :param engine_params: engine params (name=value[,name=value,...]), default None
     :return: dictionary { name, publisher, developer, genre, releasedate, desc, png_img_buffer } (each may be empty)
     """
     # issue request
@@ -119,6 +132,11 @@ def run_direct_url(u, img_index=0, img_cover=False, params=None):
     # name
     container = soup.find('strong', class_='textGameHeader')
     game_info['name'] = container.text
+    if engine_params is not None:
+        # handle multi-disk
+        p = vscraper_utils.get_parameter(engine_params, 'disk_num')
+        if len(p) > 0:
+            game_info['name'] = vscraper_utils.add_disk(game_info['name'], p)
 
     # publisher
     vscraper_utils.add_text_from_href(soup, 'list.php?list_publisher', game_info, 'publisher')
@@ -171,19 +189,19 @@ def _check_response(reply):
     return choices
 
 
-def run(to_search, img_index=0, img_cover=False, params=None):
+def run(to_search, img_index=0, img_cover=False, engine_params=None):
     """
     perform query with the given game title
     :param to_search: the game title
     :param img_index: 0-based index of the image to download, default 0
     :param img_cover: True to download boxart cover as image, default False. If boxart is not available, the first image found is used
-    :param params: engine params (name=value,[name=value]), default None
+    :param engine_params: engine params (name=value[,name=value,...]), default None
     :return: dictionary { name, publisher, developer, genre, releasedate, desc, png_img_buffer } (each may be empty)
     """
     # get game id
     params = {'list_title': to_search}
-    url = 'http://www.lemonamiga.com/games/list.php'
-    reply = requests.get(url, params=params)
+    u = 'http://www.lemonamiga.com/games/list.php'
+    reply = requests.get(u, params=params)
 
     # check response
     if not reply.ok:
@@ -195,7 +213,7 @@ def run(to_search, img_index=0, img_cover=False, params=None):
         raise vscraper_utils.MultipleChoicesException(choices)
 
     # got response with the database id, reissue
-    return run_direct_url(choices[0]['url'], img_index, img_cover)
+    return run_direct_url(choices[0]['url'], img_index, img_cover, engine_params)
 
 
 def name():
@@ -235,4 +253,4 @@ def engine_help():
     engine specific options to be used with '--engine_params'
     :return: string
     """
-    return ''
+    return 'disk_num=n (set disk number)'

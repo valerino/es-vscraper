@@ -1,6 +1,21 @@
 #!/usr/bin/env python3
-# needs pip3 (sudo apt-get install python3-pip)
-# needs requests, Image, bs4, lxml (sudo pip3 install requests Image bs4 lxml)
+"""
+es-vscraper
+
+MIT-LICENSE
+
+Copyright 2017, Valerio 'valerino' Lupi <xoanino@gmail.com>
+
+Permission is hereby granted, free of charge, to any person obtaining a copy of this software and associated documentation files (the "Software"), to deal in the Software without restriction,
+including without limitation the rights to use, copy, modify, merge, publish, distribute, sublicense, and/or sell copies of the Software, and to permit persons to whom the Software is furnished
+to do so, subject to the following conditions:
+
+The above copyright notice and this permission notice shall be included in all copies or substantial portions of the Software.
+
+THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT.
+IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE
+OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
+"""
 
 import argparse
 import importlib
@@ -159,7 +174,7 @@ def main():
     parser = argparse.ArgumentParser('Build gamelist.xml for EmulationStation by querying online databases\n')
     parser.add_argument('--list_engines', help="list the available engines (and their options, if any)", action='store_const', const=True)
     parser.add_argument('--engine', help="the engine to use (use --list_engines to check available engines)", nargs='?')
-    parser.add_argument('--engine_params', help="custom engine parameters, name=value[,name=value]", nargs='?')
+    parser.add_argument('--engine_params', help="custom engine parameters, name=value[,name=value,...], default no parameters", nargs='?')
     parser.add_argument('--to_search',
                         help='the game to search for (full or sub-string), case insensitive, enclosed in " " (i.e. "game")',
                         nargs='?')
@@ -192,12 +207,7 @@ def main():
 
         print('Available scrapers:')
         for s in scrapers:
-            print('%s (System: %s (%s), url: %s)' % (s.name(), s.system(), s.system_short(), s.url()))
-            h = s.engine_help()
-            if len(h) > 0:
-                print('available options:')
-                print(h)
-            print()
+            print('%s: System=%s(%s), url=%s, options=[%s]' % (s.name(), s.system(), s.system_short(), s.url(), s.engine_help()))
 
         exit(0)
 
@@ -211,7 +221,7 @@ def main():
 
         # scrape (single)
         scrape_title(mod, args)
-    except:
+    except Exception as e:
         traceback.print_exc()
         exit(1)
 

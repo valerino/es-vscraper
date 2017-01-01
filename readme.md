@@ -1,17 +1,18 @@
 what it is
 ----------
-es-vscraper is an extensible scraper for EmulationStation.
+es-vscraper is an extensible scraper for [EmulationStation](https://github.com/Aloshi/EmulationStation).
 
 This is a personal project made just for myself (at the moment), since i don't like the available scrapers.
 
-It is meant to be used on PC, updating existing gamelist.xml by searching single game for small game collections (need to check with each database provider for permission to implement directory-tree scanning (might be too heavy for their traffic).
+At the moment it is meant to be used on PC, creating/updating existing gamelist.xml by searching single games for small game collections (need to check with each database provider for permission to implement directory-tree scanning, might be too heavy for their traffic).
 
 It should work directly on RaspberryPI, anyway, assuming the needed
-python3 and modules are installed
+python3 and modules are installed.
 
 dependencies
 ------------
 ~~~~
+sudo apt-get install python3 pip3
 sudo pip3 install requests Image bs4 lxml
 ~~~~
 
@@ -54,17 +55,16 @@ def url():
   """
 
 def system():
-    """
-    the related system (descriptive)
-    :return: string (i.e. 'Commodore 64')
-    """
-    return 'Commodore 64'
+  """
+  the related system (descriptive)
+  :return: string (i.e. 'Commodore 64')
+  """
 
-  def system_short():
-      """
-      the related system (short)
-      :return: string (i.e. 'c64')
-      """
+def system_short():
+  """
+  the related system (short)
+  :return: string (i.e. 'c64')
+  """
 ~~~~
 
 . internal implementation is up to the plugin
@@ -113,8 +113,8 @@ currently implemented modules
 
 todo
 ----
-. Untested at the moment (need to get my hands on my raspi with EmulationStation as soon as i get back from holidays :) )
+. Untested at the moment (need to get my hands on my raspi with EmulationStation as soon as i get back from holidays :))
 
-. At the moment, only works for single game ('path' must be a game file). Need to check with each database provider for permission to implement directory-tree scanning (might be too heavy for their traffic)
+. At the moment, only works for single game ('path' must be a game file)
 
 . Implement more systems :)

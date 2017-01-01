@@ -150,7 +150,9 @@ def scrape_title(engine, args):
     vscraper_utils.write_to_file(args.gamelist_path, s)
 
     print('Successfully processed "%s": %s (%s)' % (args.to_search, game_info['name'], args.path))
-    print(game_info)
+    if args.debug:
+        # print result
+        print(game_info)
 
 
 def main():
@@ -174,7 +176,10 @@ def main():
                         help='try to download boxart cover if available, either it will download the first image found',
                         action='store_const', const=True)
     parser.add_argument('--unattended',
-                        help='Always choose the first found entry in case of multiple entries found (default False, asks on multiple choices)',
+                        help='Automatically choose the first found entry in case of multiple entries found (default False, asks on multiple choices)',
+                        action='store_const', const=True)
+    parser.add_argument('--debug',
+                        help='Print scraping result on the console',
                         action='store_const', const=True)
     args = parser.parse_args()
     if args.list_engines:

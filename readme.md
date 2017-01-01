@@ -84,31 +84,39 @@ usage: Build gamelist.xml for EmulationStation by querying online databases
        [-h] [--list_engines] [--engine [ENGINE]] [--to_search [TO_SEARCH]]
        [--path [PATH]] [--gamelist_path [GAMELIST_PATH]]
        [--img_path [IMG_PATH]] [--img_index [IMG_INDEX]] [--img_cover]
-       [--unattended]
+       [--unattended] [--debug]
 
-optional arguments:
-  -h, --help            show this help message and exit
-  --list_engines        list the available engines
-  --engine [ENGINE]     the engine to use (use --list_engines to check
-                        available engines)
-  --to_search [TO_SEARCH]
-                        the game to search for (full or sub-string), case
-                        insensitive, enclosed in " " (i.e. "game")
-  --path [PATH]         path to the single game file or path to games folder
-  --gamelist_path [GAMELIST_PATH]
-                        path to gamelist.xml (default "./gamelist.xml", will
-                        be created if not found or appended to)
-  --img_path [IMG_PATH]
-                        path to the folder where to store images (default
-                        "./images")
-  --img_index [IMG_INDEX]
-                        download image at 0-based index among available
-                        images (default 0, first found)
-  --img_cover           try to download boxart cover if available, either it
-                        will download the first image found
-  --unattended          Always choose the first found entry in case of
-                        multiple entries found (default False, asks on multiple choices)
+
+       optional arguments:
+         -h, --help            show this help message and exit
+         --list_engines        list the available engines
+         --engine [ENGINE]     the engine to use (use --list_engines to check
+                               available engines)
+         --to_search [TO_SEARCH]
+                               the game to search for (full or sub-string), case
+                               insensitive, enclosed in " " (i.e. "game")
+         --path [PATH]         path to the single game file or path to games folder
+         --gamelist_path [GAMELIST_PATH]
+                               path to gamelist.xml (default "./gamelist.xml", will
+                               be created if not found or appended to)
+         --img_path [IMG_PATH]
+                               path to the folder where to store images (default
+                               "./images")
+         --img_index [IMG_INDEX]
+                               download image at 0-based index among available images
+                               (default 0, first found)
+         --img_cover           try to download boxart cover if available, either it
+                               will download the first image found
+         --unattended          Automatically choose the first found entry in case of
+                               multiple entries found (default False, asks on
+                               multiple choices)
+         --debug               Print scraping result on the console
+
 ~~~~
+
+sample usage
+------------
+./es-vscraper.py --engine lemon-c64 --to_search "caesar the cat" --path ./caesar\ the\ cat.prg
 
 currently implemented modules
 -----------------------------

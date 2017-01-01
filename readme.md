@@ -120,7 +120,7 @@ currently implemented modules
 
 todo
 ----
-. Untested at the moment (need to get my hands on my raspi with EmulationStation as soon as i get back from holidays :))
+. Tested on Linux and OSX, but should work on any OS with python3 (including raspberry, of course)
 
 . At the moment, only works for single game ('path' must be a game file)
 

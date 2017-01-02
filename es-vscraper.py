@@ -112,7 +112,7 @@ def scrape_title(engine, args):
         game_info = engine.run(args.to_search, args.img_index, args.img_cover, args.engine_params)
     except vscraper_utils.GameNotFoundException as e:
         print('Cannot find %s on %s' % (args.to_search, engine.name()))
-        raise e
+        return
 
     except vscraper_utils.MultipleChoicesException as e:
         print('Multiple titles found for %s:' % args.to_search)
@@ -143,6 +143,8 @@ def scrape_title(engine, args):
 
         # add path to dictionary
         game_info['image'] = img_path
+    else:
+        game_info['image'] = None
 
     # add title path to dictionary
     game_info['path'] = args.path

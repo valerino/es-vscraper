@@ -249,4 +249,4 @@ def engine_help():
     engine specific options to be used with '--engine_params'
     :return: string
     """
-    return 'disk_num=n (set disk number),system=amstrad-cpc|apple-ii|atari-8-bit|atari-st|commodore-64|commodore-amiga|microsoft-xbox|msx|msx-2|nintendo-gameboy|nintendo-gameboy-color|nintendo-nes|sega-master-system|sinclair-zx-spectrum|sony-playstation-ii (the target system)'
+    return 'disk_num=n (set disk number),system=amstrad-cpc|apple-ii|atari-8-bit|atari-st|arcade|commodore-64|commodore-amiga|gce-vectrex|microsoft-xbox|msx|msx-2|nintendo-gameboy|nintendo-gameboy-color|nintendo-nes|nintendo-snes|sega-game-gear|sega-master-system|sega-genesis|sinclair-zx-spectrum|sony-playstation|sony-playstation-ii (the target system)'

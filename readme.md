@@ -132,10 +132,15 @@ currently implemented modules
 . Commodore 64
 - Lemon (http://www.lemon64.com)
 
+. Multi
+- Games Database (http://www.gamesdatabase.org)
+(includes amstrad-cpc, apple-ii, atari-8-bit, atari-st, arcade, commodore-64, commodore-amiga, gce-vectrex, microsoft-xbox, msx, msx-2, nintendo-gameboy, nintendo-gameboy-color, nintendo-nes, nintendo-snes, sega-game-gear, sega-master-system, sega-genesis, sinclair-zx-spectrum, sony-playstation, sony-playstation-ii and possibly others)
+
+
 todo
 ----
 . Tested on Linux and OSX, but should work on any OS with python3 (including raspberry, of course)
 
 . At the moment, only works for single game ('path' must be a game file)
 
-. Implement more systems :)
+. Implement more scrapers :)

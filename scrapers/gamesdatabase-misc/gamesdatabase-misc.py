@@ -23,61 +23,104 @@ from bs4 import BeautifulSoup
 import vscraper_utils
 
 
-def _get_real_img_url(soup, path):
-    """
-    get the real image url
-    :param soup: the source soup
-    :param path: path from source page
-    :return: string or ''
-    """
-    u = vscraper_utils.find_href(soup, path)[0]['href']
-    reply = requests.get('http://www.gamesdatabase.org%s' % u)
-    html = reply.content
-    s = BeautifulSoup(html, 'html.parser')
-    imgs = s.find_all('img')
-    for i in imgs:
-        if 'alt' in i.attrs and 'Artwork' in i.attrs['alt']:
-            img_url = 'http://www.gamesdatabase.org%s' % i.attrs['src']
-            return img_url
+def _find_full_img_tag(tag):
+    if tag.name == 'img' and tag.has_attr('alt') and 'Artwork' in tag['alt']:
+        return True
+    return False
 
-    return ''
 
-def _download_image(soup, machine, img_index=0, img_cover=False):
+def _find_ingame_thumb_tag(tag):
+    if tag.name == 'img' and tag.has_attr('alt') and tag['alt'].startswith('In game image '):
+        return True
+    return False
+
+
+def _find_title_thumb_tag(tag):
+    if tag.name == 'img' and tag.has_attr('alt') and tag['alt'].startswith('Title screen '):
+        return True
+    return False
+
+
+def _find_box_thumb_tag(tag):
+    if tag.name == 'img' and tag.has_attr('alt') and tag['alt'].startswith('Box cover '):
+        return True
+    return False
+
+
+def _find_a_text_box(tag):
+    if tag.name == 'a' and tag.text == 'Box':
+        return True
+    return False
+
+
+def _find_a_text_ingame(tag):
+    if tag.name == 'a' and tag.text == 'In Game':
+        return True
+    return False
+
+
+def _find_a_text_title(tag):
+    if tag.name == 'a' and tag.text == 'Title Screen':
+        return True
+    return False
+
+
+def _download_image(soup, args):
     """
     download game image
     :param soup: the source soup
     :param machine: the system
-    :param img_index: image index, or 0
-    :param img_cover: True to download cover
+    :param args: arguments from cmdline
     :return: image buffer, or None
     """
+
+    got_cover = False
+    img_url = ''
+
+    if args.img_cover:
+        # download cover
+        try:
+            if args.img_thumbnail:
+                # thumbnail
+                img_url = 'http://www.gamesdatabase.org%s' % soup.find(_find_box_thumb_tag)['src']
+            else:
+                # full
+                href = 'http://www.gamesdatabase.org%s' % soup.find(_find_a_text_box)['href']
+                reply = requests.get(href)
+                html = reply.content
+                s = BeautifulSoup(html, 'html.parser')
+                img_url = 'http://www.gamesdatabase.org%s' % s.find(_find_full_img_tag)['src']
+
+            got_cover = True
+        except Exception as e:
+            pass
+
     try:
-        got_cover = False
-        img_url = ''
-        if img_cover:
-            try:
-                # get cover url
-                box = '/media/%s/artwork-box' % machine
-                img_url = _get_real_img_url(soup, box)
-                if len(img_url) > 0:
-                    got_cover = True
-            except Exception as e:
-                pass
-
         if not got_cover:
-            in_game = '/media/%s/artwork-in-game' % machine
-            title = '/media/%s/artwork-title-screen' % machine
-
-            # for img_index = 0, we try to download title image, else we try ingame image
-            try:
-                img_url = _get_real_img_url(soup, title if img_index == 0 else in_game)
-            except:
-                # try the other way
-                try:
-                    img_url = _get_real_img_url(soup, in_game if img_index == 0 else title)
-                except:
-                    # no luck
-                    return None
+            if args.img_index == 0:
+                # try to get ingame
+                if args.img_thumbnail:
+                    # thumbnail
+                    img_url = 'http://www.gamesdatabase.org%s' % soup.find(_find_ingame_thumb_tag)['src']
+                else:
+                    # full
+                    href = 'http://www.gamesdatabase.org%s' % soup.find(_find_a_text_ingame)['href']
+                    reply = requests.get(href)
+                    html = reply.content
+                    s = BeautifulSoup(html, 'html.parser')
+                    img_url = 'http://www.gamesdatabase.org%s' % s.find(_find_full_img_tag)['src']
+            else:
+                # try to get title
+                if args.img_thumbnail:
+                    # thumbnail
+                    img_url = 'http://www.gamesdatabase.org%s' % soup.find(_find_title_thumb_tag)['src']
+                else:
+                    # full
+                    href = 'http://www.gamesdatabase.org%s' % soup.find(_find_a_text_title)['href']
+                    reply = requests.get(href)
+                    html = reply.content
+                    s = BeautifulSoup(html, 'html.parser')
+                    img_url = 'http://www.gamesdatabase.org%s' % s.find(_find_full_img_tag)['src']
 
         # download
         reply = requests.get(img_url)
@@ -91,13 +134,10 @@ def _download_image(soup, machine, img_index=0, img_cover=False):
         return None
 
 
-def run_direct_url(u, img_index=0, img_cover=False, engine_params=None):
+def run_direct_url(u, args):
     """
     perform query with the given direct url
     :param u: the game url
-    :param img_index: 0-based index of the image to download, default 0
-    :param img_cover: True to download boxart cover as image, default False. If boxart is not available, the first image found is used
-    :param engine_params: engine params (name=value[,name=value,...]), default None
     :return: dictionary { name, publisher, developer, genre, releasedate, desc, png_img_buffer } (each may be empty)
     """
     # issue request
@@ -118,9 +158,9 @@ def run_direct_url(u, img_index=0, img_cover=False, engine_params=None):
         container = soup.find('span', id='Out')
         idx = container.contents[0].text.find(' - ')
         game_info['name'] = container.contents[0].text[:idx]
-        if engine_params is not None:
+        if args.engine_params is not None:
             # handle multi-disk
-            p = vscraper_utils.get_parameter(engine_params, 'disk_num')
+            p = vscraper_utils.get_parameter(args.engine_params, 'disk_num')
             if len(p) > 0:
                 game_info['name'] = vscraper_utils.add_disk(game_info['name'], p)
     except:
@@ -146,8 +186,8 @@ def run_direct_url(u, img_index=0, img_cover=False, engine_params=None):
         game_info['desc'] = ''
 
     # image
-    machine = vscraper_utils.get_parameter(engine_params, 'system')
-    game_info['img_buffer'] = _download_image(soup, machine, img_index, img_cover)
+    machine = vscraper_utils.get_parameter(args.engine_params, 'system')
+    game_info['img_buffer'] = _download_image(soup, args)
 
     return game_info
 
@@ -184,32 +224,29 @@ def _check_response(reply):
     return choices
 
 
-def run(to_search, img_index=0, img_cover=False, engine_params=None):
+def run(args):
     """
     perform query with the given game title
-    :param to_search: the game title
-    :param img_index: 0-based index of the image to download, default 0
-    :param img_cover: True to download boxart cover as image, default False. If boxart is not available, the first image found is used
-    :param engine_params: engine params (name=value[,name=value,...]), default None
+    :param args: arguments from cmdline
     :return: dictionary { name, publisher, developer, genre, releasedate, desc, png_img_buffer } (each may be empty)
     """
-    if engine_params is None:
+    if args.engine_params is None:
         print(
             '--engine_params system=... is required (use --list_engines to check supported systems for %s scraper' % name())
         raise ValueError
 
     # get system
-    s = vscraper_utils.get_parameter(engine_params, 'system')
+    s = vscraper_utils.get_parameter(args.engine_params, 'system')
 
     # normalize game name
-    game = re.sub('[^0-9a-zA-Z]+', '-', to_search)
+    game = re.sub('[^0-9a-zA-Z]+', '-', args.to_search)
     game = game.replace('--', '-')
 
     # get url
     u = 'http://www.gamesdatabase.org/game/%s/%s' % (s, game)
 
     # reissue
-    return run_direct_url(u, img_index, img_cover, engine_params)
+    return run_direct_url(u, args)
 
 
 def name():
@@ -228,25 +265,30 @@ def url():
     return 'http://www.gamesdatabase.org'
 
 
-def system():
+def systems():
     """
-    the related system (descriptive)
+    the related system/s
     :return: string (i.e. 'Commodore 64')
     """
-    return 'Various'
-
-
-def system_short():
-    """
-    the related system (short)
-    :return: string (i.e. 'c64')
-    """
-    return 'misc'
+    return """acorn-archimedes,acorn-atom,acorn-bbc-micro,acorn-electron,amstrad-cpc,amstrad-gx4000,apple-ii,arcade,atari-2600,atari-5200,atari-7800,
+        atari-8-bit,atari-jaguar,atari-jaguar-cd,atari-lynx,atari-st,bally-astrocade,bandai-wonderswan,bandai-wonderswan-color,casio-loopy,casio-pv-1000,
+        coleco-vision,commodore-128,commodore-64,commodore-amiga,commodore-amiga-cd32,commodore-cdtv,commodore-pet,commodore-vic-20,dragon-32-64,emerson-arcadia-2001,
+        entex-adventure-vision,epoch-super-cassette-vision,fairchild-channel-f,funtech-super-acan,gamepark-gp32,gce-vectrex,genesis-microchip-nuon,hartung-game-master,
+        interton-vc-4000,laserdisc,magnavox-odyssey,magnavox-odyssey-2,mattel-intellivision,mega-duck,memotech-mtx,mgt-sam-coupe,microsoft-xbox,microsoft-xbox-360,
+        microsoft-xbox-live-arcade,msx,msx-2,msx-2+,msx-laserdisc,mugen,nec-pc-engine,nec-pc-engine-cd,nec-pc-fx,nec-supergrafx,nec-turbografx-cd,nec-turbografx-16,nintendo-arcade-systems,
+        nintendo-ds,nintendo-famicom-disk-system,nintendo-game-boy,nintendo-game-boy-advance,nintendo-game-boy-color,nintendo-gamecube,nintendo-n64,nintendo-nes,nintendo-pokemon-mini,
+        nintendo-snes,nintendo-super-gameboy,nintendo-virtual-boy,nintendo-wii,openbor,panasonic-3do,philips-cd-i,philips-vg-5000,philips-videopac+,popcap,rca-studio-ii,sammy-atomiswave,
+        scummvm,sega-32x,sega-cd,sega-dreamcast,sega-game-gear,sega-genesis,sega-master-system,sega-model-2,sega-model-3,sega-naomi,sega-nomad,sega-pico,sega-saturn,sega-sc-3000,sega-sg-1000,
+        sega-st-v,sinclair-zx-spectrum,sinclair-zx-81,snk-neo-geo-aes,snk-neo-geo-cd,snk-neo-geo-mvs,snk-neo-geo-pocket,snk-neo-geo-pocket-color,sony-playstation,sony-playstation-2,sony-psp,
+        sord-m5,taito-type-x,taito-type-x2,tandy-trs-80,tandy-trs-80-coco,tangerine-oric,texas-instruments-ti-99/4a,tiger-game.com,touhou-project,valve-steam,vtech-creativision,
+        watara-supervision,wow-action-max"""
 
 
 def engine_help():
     """
-    engine specific options to be used with '--engine_params'
+    help on engine specific '--engine_params' and such
     :return: string
     """
-    return 'disk_num=n (set disk number),system=amstrad-cpc|apple-ii|atari-8-bit|atari-st|arcade|commodore-64|commodore-amiga|gce-vectrex|microsoft-xbox|msx|msx-2|nintendo-gameboy|nintendo-gameboy-color|nintendo-nes|nintendo-snes|sega-game-gear|sega-master-system|sega-genesis|sinclair-zx-spectrum|sony-playstation|sony-playstation-ii (the target system)'
+    return """disk_num=n (set disk number)
+        system=name (scrape this system)
+        note: img_index=0 (default) downloads in-game screen, img_index=1 downloads title screen"""

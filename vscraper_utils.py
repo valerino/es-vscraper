@@ -74,7 +74,7 @@ def find_href(root, substring):
     """
     browse all 'a' tags for specific 'href'
     :param root: an html node
-    :param substring: a substring (match with startswith())
+    :param substring: a substring (match with startswith()), may be None
     :return: array or None
     """
     tags = root.find_all('a')

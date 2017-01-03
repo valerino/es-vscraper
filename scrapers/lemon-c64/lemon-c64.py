@@ -23,20 +23,20 @@ from bs4 import BeautifulSoup
 import vscraper_utils
 
 
-def _download_image(soup, img_index=0, img_cover=False):
+def _download_image(soup, args):
     """
     download game image
     :param soup: the source soup
-    :param img_index: image index, or 0
-    :param img_cover: True to download cover
+    :param args: arguments from cmdline
     :return: image buffer, or None
     """
-    try:
-        got_cover = False
-        img_url = ''
-        if img_cover:
-            try:
-                # get cover url
+    got_cover = False
+    img_url = ''
+
+    if args.img_cover:
+        try:
+            if not args.img_thumbnail:
+                # prefer full size, get cover url
                 r = re.search('(.+=)([0-9]+)', soup.find('link', rel='canonical').attrs['href'])
                 gameid = r.group(2)
                 u = 'http://www.lemon64.com/games/view_cover.php?gameID=%s' % gameid
@@ -44,14 +44,19 @@ def _download_image(soup, img_index=0, img_cover=False):
                 html = reply.content
                 s = BeautifulSoup(html, 'html.parser')
                 img_url = s.find('img').attrs['src']
-                got_cover = True
-            except:
-                pass
+            else:
+                # thumbnail
+                img_url = soup.find('img', {'name': 'imgCover'})['src']
 
+            got_cover = True
+        except Exception as e:
+            pass
+
+    try:
         if not got_cover:
-            # get screenshot url
+            # get screenshot url, no thumbnail is available here
             img_urls = soup.find_all('img', 'pic')
-            selected_img = img_urls[img_index]
+            selected_img = img_urls[args.img_index]
             img_url = selected_img.attrs['src']
 
         # download
@@ -61,7 +66,8 @@ def _download_image(soup, img_index=0, img_cover=False):
         # convert to png
         img_buffer = vscraper_utils.img_to_png(img)
         return img_buffer
-    except:
+
+    except Exception as e:
         return None
 
 
@@ -100,13 +106,11 @@ def _download_descr(soup):
             return ''
 
 
-def run_direct_url(u, img_index=0, img_cover=False, engine_params=None):
+def run_direct_url(u, args):
     """
     perform query with the given direct url
     :param u: the game url
-    :param img_index: 0-based index of the image to download, default 0
-    :param img_cover: True to download boxart cover as image, default False. If boxart is not available, the first image found is used
-    :param engine_params: engine params (name=value[,name=value,...]), default None
+    :param args: arguments from cmdline
     :return: dictionary { name, publisher, developer, genre, releasedate, desc, png_img_buffer } (each may be empty)
     """
     # issue request
@@ -125,9 +129,9 @@ def run_direct_url(u, img_index=0, img_cover=False, engine_params=None):
     # name
     container = soup.find('td', class_='normalheadblank')
     game_info['name'] = container.contents[1].text.strip()
-    if engine_params is not None:
+    if args.engine_params is not None:
         # handle multi-disk
-        p = vscraper_utils.get_parameter(engine_params, 'disk_num')
+        p = vscraper_utils.get_parameter(args.engine_params, 'disk_num')
         if len(p) > 0:
             game_info['name'] = vscraper_utils.add_disk(game_info['name'], p)
 
@@ -149,7 +153,7 @@ def run_direct_url(u, img_index=0, img_cover=False, engine_params=None):
     game_info['desc'] = _download_descr(soup)
 
     # image
-    game_info['img_buffer'] = _download_image(soup, img_index, img_cover)
+    game_info['img_buffer'] = _download_image(soup, args)
 
     return game_info
 
@@ -186,17 +190,14 @@ def _check_response(reply):
     return choices
 
 
-def run(to_search, img_index=0, img_cover=False, engine_params=None):
+def run(args):
     """
     perform query with the given game title
-    :param to_search: the game title
-    :param img_index: 0-based index of the image to download, default 0
-    :param img_cover: True to download boxart cover as image, default False. If boxart is not available, the first image found is used
-    :param engine_params: engine params (name=value[,name=value,...]), default None
+    :param args: arguments from cmdline
     :return: dictionary { name, publisher, developer, genre, releasedate, desc, png_img_buffer } (each may be empty)
     """
     # get game id
-    params = {'type': 'title', 'name': to_search}
+    params = {'type': 'title', 'name': args.to_search}
     u = 'http://www.lemon64.com/games/list.php'
     reply = requests.get(u, params=params)
 
@@ -210,7 +211,7 @@ def run(to_search, img_index=0, img_cover=False, engine_params=None):
         raise vscraper_utils.MultipleChoicesException(choices)
 
     # got single response, reissue
-    return run_direct_url(choices[0]['url'], img_index, img_cover, engine_params)
+    return run_direct_url(choices[0]['url'], args)
 
 
 def name():
@@ -229,25 +230,17 @@ def url():
     return 'http://www.lemon64.com'
 
 
-def system():
+def systems():
     """
-    the related system (descriptive)
+    the related system/s
     :return: string (i.e. 'Commodore 64')
-    """
-    return 'Commodore 64'
-
-
-def system_short():
-    """
-    the related system (short)
-    :return: string (i.e. 'c64')
     """
     return 'c64'
 
 
 def engine_help():
     """
-    engine specific options to be used with '--engine_params'
+    help on engine specific '--engine_params' and such
     :return: string
     """
     return 'disk_num=n (set disk number)'

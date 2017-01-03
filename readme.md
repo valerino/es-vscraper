@@ -25,19 +25,14 @@ def run_direct_url(u, img_index=0, img_cover=False, engine_params=None):
   """
   perform query with the given direct url
   :param u: the game url
-  :param img_index: 0-based index of the image to download, default 0
-  :param img_cover: True to download boxart cover as image, default False. If boxart is not available, the first image found is used
-  :param engine_params: engine params (name=value[,name=value,...]), default None
+  :param args: arguments from cmdline
   :return: dictionary { name, publisher, developer, genre, releasedate, desc, png_img_buffer } (each may be empty)
   """
 
 def run(to_search, img_index=0, img_cover=False, engine_params=None):
   """
   perform query with the given game title
-  :param to_search: the game title
-  :param img_index: 0-based index of the image to download, default 0
-  :param img_cover: True to download boxart cover as image, default False. If boxart is not available, the first image found is used
-  :param engine_params: engine params (name=value[,name=value,...]), default None
+  :param args: arguments from cmdline
   :return: dictionary { name, publisher, developer, genre, releasedate, desc, png_img_buffer } (each may be empty)
   """
 
@@ -53,21 +48,15 @@ def url():
   :return: string (i.e. 'http://www.lemon64.com')
   """
 
-def system():
+def systems():
   """
-  the related system (descriptive)
+  the related system/s (descriptive)
   :return: string (i.e. 'Commodore 64')
-  """
-
-def system_short():
-  """
-  the related system (short)
-  :return: string (i.e. 'c64')
   """
 
 def engine_help():
   """
-  engine specific options to be used with '--engine_params'
+  help on engine specific '--engine_params' and such
   :return: string
   """
 ~~~~
@@ -114,6 +103,7 @@ optional arguments:
                         (default 0, first found)
   --img_cover           try to download boxart cover if available, either it
                         will download the first image found
+  --img_thumbnail       download image thumbnail, if possible
   --unattended          Automatically choose the first found entry in case of
                         multiple entries found (default False, asks on
                         multiple choices)

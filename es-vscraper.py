@@ -20,6 +20,7 @@ OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 import argparse
 import importlib
 import os
+import re
 import traceback
 
 import vscraper_utils
@@ -28,7 +29,7 @@ from lxml import etree, objectify
 SCRAPERS_FOLDER = 'scrapers'
 
 
-def get_scrapers():
+def list_scrapers():
     """
     get scrapers in ./scrapers folder
     :return: [ modules]
@@ -109,7 +110,7 @@ def scrape_title(engine, args):
     """
     try:
         print('Downloading data for %s' % args.to_search)
-        game_info = engine.run(args.to_search, args.img_index, args.img_cover, args.engine_params)
+        game_info = engine.run(args)
     except vscraper_utils.GameNotFoundException as e:
         print('Cannot find %s on %s' % (args.to_search, engine.name()))
         return
@@ -130,7 +131,7 @@ def scrape_title(engine, args):
         # reissue with the correct entry
         c = e.choices()[int(res) - 1]
         print('Downloading data for %s: %s, %s, %s' % (args.to_search, c['name'], c['publisher'], c['year']))
-        game_info = engine.run_direct_url(c['url'], args.img_index, args.img_cover, args.engine_params)
+        game_info = engine.run_direct_url(c['url'], args)
 
     if game_info['img_buffer'] is not None:
         # store image, ensuring folder exists
@@ -138,7 +139,9 @@ def scrape_title(engine, args):
             os.mkdir(args.img_path)
         except FileExistsError:
             pass
-        img_path = os.path.join(args.img_path, '%s.png' % game_info['name'])
+
+        normalized = re.sub('[^0-9a-zA-Z]+', '-', game_info['name'])
+        img_path = os.path.join(args.img_path, '%s.png' % normalized)
         vscraper_utils.write_to_file(img_path, game_info['img_buffer'])
 
         # add path to dictionary
@@ -193,6 +196,9 @@ def main():
     parser.add_argument('--img_cover',
                         help='try to download boxart cover if available, either it will download the first image found',
                         action='store_const', const=True)
+    parser.add_argument('--img_thumbnail',
+                        help='download image thumbnail, if possible',
+                        action='store_const', const=True)
     parser.add_argument('--unattended',
                         help='Automatically choose the first found entry in case of multiple entries found (default False, asks on multiple choices)',
                         action='store_const', const=True)
@@ -202,14 +208,19 @@ def main():
     args = parser.parse_args()
     if args.list_engines:
         # list engines and exit
-        scrapers = get_scrapers()
+        scrapers = list_scrapers()
         if len(scrapers) == 0:
             print('No scrapers installed. check ./scrapers folder!')
             exit(1)
 
         print('Available scrapers:')
+        print('-----------------------------------------------------------------')
         for s in scrapers:
-            print('%s: System=%s(%s), url=%s, options=[%s]' % (s.name(), s.system(), s.system_short(), s.url(), s.engine_help()))
+            print('scraper: %s' % s.name())
+            print('url: %s' % s.url())
+            print('supported system/s: %s' % s.systems())
+            print('custom options: %s' % s.engine_help())
+            print('-----------------------------------------------------------------')
 
         exit(0)
 

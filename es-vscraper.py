@@ -109,14 +109,14 @@ def scrape_title(engine, args):
     :return:
     """
     try:
-        print('Downloading data for %s' % args.to_search)
+        print('Downloading data for "%s" (%s)...' % (args.to_search, '-' if args.engine_params is None else args.engine_params))
         game_info = engine.run(args)
     except vscraper_utils.GameNotFoundException as e:
         print('Cannot find "%s", scraper="%s"' % (args.to_search, engine.name()))
         return
 
     except vscraper_utils.MultipleChoicesException as e:
-        print('Multiple titles found for %s:' % args.to_search)
+        print('Multiple titles found for "%s":' % args.to_search)
         i = 1
         for choice in e.choices():
             print('%s: [%s] %s, %s, %s' % (i, choice['system'] if 'system' in choice else '-',
@@ -131,7 +131,7 @@ def scrape_title(engine, args):
 
         # reissue with the correct entry
         c = e.choices()[int(res) - 1]
-        print('Downloading data for %s: %s, %s, %s' % (args.to_search, c['name'], c['publisher'], c['year']))
+        print('Downloading data for "%s": %s, %s, %s' % (args.to_search, c['name'], c['publisher'], c['year']))
         game_info = engine.run_direct_url(c['url'], args)
 
     if game_info['img_buffer'] is not None:
@@ -172,7 +172,10 @@ def scrape_title(engine, args):
 
     print('Successfully processed "%s": %s (%s)' % (args.to_search, game_info['name'], args.path))
     if args.debug:
-        # print result
+        # print debug result, avoid to print the image buffer if any
+        if game_info['img_buffer'] is not None:
+            game_info['img_buffer'] = '...'
+
         print(game_info)
 
 
@@ -180,7 +183,7 @@ def main():
     parser = argparse.ArgumentParser('Build gamelist.xml for EmulationStation by querying online databases\n')
     parser.add_argument('--list_engines', help="list the available engines (and their options, if any)", action='store_const', const=True)
     parser.add_argument('--engine', help="the engine to use (use --list_engines to check available engines)", nargs='?')
-    parser.add_argument('--engine_params', help="custom engine parameters, name=value[,name=value,...], default no parameters", nargs='?')
+    parser.add_argument('--engine_params', help="custom engine parameters, name=value[,name=value,...], default None", nargs='?')
     parser.add_argument('--to_search',
                         help='the game to search for (full or sub-string), case insensitive, enclosed in " " (i.e. "game")',
                         nargs='?')
@@ -192,11 +195,8 @@ def main():
     parser.add_argument('--img_path', help='path to the folder where to store images (default "./images")', nargs='?',
                         default='./images')
     parser.add_argument('--img_index',
-                        help='download image at 0-based index among available images (default 0, first found)',
+                        help='download image at 0-based index among available images (default 0=first found, -1 tries to download boxart if found or fallbacks to first image found)',
                         nargs="?", type=int, default=0)
-    parser.add_argument('--img_cover',
-                        help='try to download boxart cover if available, either it will download the first image found',
-                        action='store_const', const=True)
     parser.add_argument('--img_thumbnail',
                         help='download image thumbnail, if possible',
                         action='store_const', const=True)
@@ -220,7 +220,7 @@ def main():
             print('scraper: %s' % s.name())
             print('url: %s' % s.url())
             print('supported system/s: %s' % s.systems())
-            print('custom options: %s' % s.engine_help())
+            print('custom options:\n\t%s' % s.engine_help())
             print('-----------------------------------------------------------------')
 
         exit(0)

@@ -33,7 +33,8 @@ def _download_image(soup, args):
     got_cover = False
     img_url = ''
 
-    if args.img_cover:
+    if args.img_index == -1:
+        # try to get boxart
         try:
             if not args.img_thumbnail:
                 # prefer full size, get cover url
@@ -50,13 +51,20 @@ def _download_image(soup, args):
 
             got_cover = True
         except Exception as e:
+            # fallback to 0
+            args.img_index = 0
             pass
 
     try:
         if not got_cover:
             # get screenshot url, no thumbnail is available here
             img_urls = soup.find_all('img', 'pic')
-            selected_img = img_urls[args.img_index]
+            try:
+                selected_img = img_urls[args.img_index]
+            except:
+                # always fallback to 0, if exist
+                selected_img = img_urls[0]
+
             img_url = selected_img.attrs['src']
 
         # download

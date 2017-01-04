@@ -33,8 +33,8 @@ def _download_image(soup, u, args):
     img_url = ''
     got_cover = False
 
-    if args.img_cover:
-        # try to get cover
+    if args.img_index == -1:
+        # try to get boxart
         try:
             covers = vscraper_utils.find_href(soup, 'box.php?id=')
             if not args.img_thumbnail:
@@ -51,6 +51,8 @@ def _download_image(soup, u, args):
 
             got_cover = True
         except Exception as e:
+            # fallback to 0
+            args.img_index = 0
             pass
 
     try:
@@ -63,7 +65,12 @@ def _download_image(soup, u, args):
             html = reply.content
             s = BeautifulSoup(html, 'html.parser')
             img_urls = s.find_all('img')
-            selected_img = img_urls[args.img_index]
+            try:
+                selected_img = img_urls[args.img_index]
+            except:
+                # always fallback to 0, if exist
+                selected_img = img_urls[0]
+
             img_url = selected_img.attrs['src']
             if not args.img_thumbnail:
                 # prefer the full picture

@@ -89,7 +89,7 @@ optional arguments:
   --engine [ENGINE]     the engine to use (use --list_engines to check
                         available engines)
   --engine_params [ENGINE_PARAMS]
-                        custom engine parameters, name=value[,name=value,...], default no parameters
+                        custom engine parameters, name=value[,name=value,...], default None
   --to_search [TO_SEARCH]
                         the game to search for (full or sub-string), case
                         insensitive, enclosed in " " (i.e. "game")
@@ -102,9 +102,8 @@ optional arguments:
                         "./images")
   --img_index [IMG_INDEX]
                         download image at 0-based index among available images
-                        (default 0, first found)
-  --img_cover           try to download boxart cover if available, either it
-                        will download the first image found
+                        (default 0=first found, -1 tries to download boxart if
+                        found or fallbacks to first image found)
   --img_thumbnail       download image thumbnail, if possible
   --unattended          Automatically choose the first found entry in case of
                         multiple entries found (default False, asks on

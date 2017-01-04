@@ -64,6 +64,69 @@ def _find_a_text_title(tag):
     return False
 
 
+def _download_ingame_image(soup, args):
+    """
+    download ingame image
+    :param soup: the source soup
+    :param args: arguments from cmdline
+    :return: string
+    """
+    if args.img_thumbnail:
+        # thumbnail
+        img_url = 'http://www.gamesdatabase.org%s' % soup.find(_find_ingame_thumb_tag)['src']
+    else:
+        # full
+        href = 'http://www.gamesdatabase.org%s' % soup.find(_find_a_text_ingame)['href']
+        reply = requests.get(href)
+        html = reply.content
+        s = BeautifulSoup(html, 'html.parser')
+        img_url = 'http://www.gamesdatabase.org%s' % s.find(_find_full_img_tag)['src']
+
+    return img_url
+
+
+def _download_box_image(soup, args):
+    """
+    download box image
+    :param soup: the source soup
+    :param args: arguments from cmdline
+    :return: string
+    """
+    if args.img_thumbnail:
+        # thumbnail
+        img_url = 'http://www.gamesdatabase.org%s' % soup.find(_find_box_thumb_tag)['src']
+    else:
+        # full
+        href = 'http://www.gamesdatabase.org%s' % soup.find(_find_a_text_box)['href']
+        reply = requests.get(href)
+        html = reply.content
+        s = BeautifulSoup(html, 'html.parser')
+        img_url = 'http://www.gamesdatabase.org%s' % s.find(_find_full_img_tag)['src']
+
+    return img_url
+
+
+def _download_title_image(soup, args):
+    """
+    download box image
+    :param soup: the source soup
+    :param args: arguments from cmdline
+    :return: string
+    """
+    if args.img_thumbnail:
+        # thumbnail
+        img_url = 'http://www.gamesdatabase.org%s' % soup.find(_find_title_thumb_tag)['src']
+    else:
+        # full
+        href = 'http://www.gamesdatabase.org%s' % soup.find(_find_a_text_title)['href']
+        reply = requests.get(href)
+        html = reply.content
+        s = BeautifulSoup(html, 'html.parser')
+        img_url = 'http://www.gamesdatabase.org%s' % s.find(_find_full_img_tag)['src']
+
+    return img_url
+
+
 def _download_image(soup, args):
     """
     download game image
@@ -76,50 +139,28 @@ def _download_image(soup, args):
     got_cover = False
     img_url = ''
 
-    if args.img_cover:
-        # download cover
+    if args.img_index == -1:
         try:
-            if args.img_thumbnail:
-                # thumbnail
-                img_url = 'http://www.gamesdatabase.org%s' % soup.find(_find_box_thumb_tag)['src']
-            else:
-                # full
-                href = 'http://www.gamesdatabase.org%s' % soup.find(_find_a_text_box)['href']
-                reply = requests.get(href)
-                html = reply.content
-                s = BeautifulSoup(html, 'html.parser')
-                img_url = 'http://www.gamesdatabase.org%s' % s.find(_find_full_img_tag)['src']
-
+            # try to download cover
+            img_url = _download_box_image(soup, args)
             got_cover = True
         except Exception as e:
+            # fallback to 0
+            args.img_index = 0
             pass
 
     try:
         if not got_cover:
-            if args.img_index == 0:
-                # try to get ingame
-                if args.img_thumbnail:
-                    # thumbnail
-                    img_url = 'http://www.gamesdatabase.org%s' % soup.find(_find_ingame_thumb_tag)['src']
+            try:
+                if args.img_index == 0:
+                    # get ingame
+                    img_url = _download_ingame_image(soup, args)
                 else:
-                    # full
-                    href = 'http://www.gamesdatabase.org%s' % soup.find(_find_a_text_ingame)['href']
-                    reply = requests.get(href)
-                    html = reply.content
-                    s = BeautifulSoup(html, 'html.parser')
-                    img_url = 'http://www.gamesdatabase.org%s' % s.find(_find_full_img_tag)['src']
-            else:
-                # try to get title
-                if args.img_thumbnail:
-                    # thumbnail
-                    img_url = 'http://www.gamesdatabase.org%s' % soup.find(_find_title_thumb_tag)['src']
-                else:
-                    # full
-                    href = 'http://www.gamesdatabase.org%s' % soup.find(_find_a_text_title)['href']
-                    reply = requests.get(href)
-                    html = reply.content
-                    s = BeautifulSoup(html, 'html.parser')
-                    img_url = 'http://www.gamesdatabase.org%s' % s.find(_find_full_img_tag)['src']
+                    # get title
+                    img_url = _download_title_image(soup, args)
+            except:
+                # fallback to ingame, in case
+                img_url = _download_ingame_image(soup, args)
 
         # download
         reply = requests.get(img_url)
@@ -312,5 +353,5 @@ def engine_help():
     :return: string
     """
     return """disk_num=n (set disk number)
-        system=name (scrape this system)
-        note: img_index=0 (default) downloads in-game screen, img_index=1 downloads title screen"""
+        system=name (target system)
+        note: img_index=0 (default) downloads in-game screen, img_index=1 downloads title screen (fallback to in-game if not found)"""

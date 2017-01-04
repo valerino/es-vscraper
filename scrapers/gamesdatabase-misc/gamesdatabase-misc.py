@@ -232,7 +232,7 @@ def run(args):
     """
     if args.engine_params is None:
         print(
-            '--engine_params system=... is required (use --list_engines to check supported systems for %s scraper' % name())
+            '--engine_params system=... is required (use --list_engines to check supported systems)')
         raise ValueError
 
     # get system

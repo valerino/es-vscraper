@@ -7,8 +7,10 @@ This is a personal project made just for myself (at the moment), since i don't l
 dependencies
 ------------
 ~~~~
-sudo apt-get install python3 python3-pip3
+sudo apt-get update (needed on retropie/raspi, seems....)
+sudo apt-get install python3 python3-pip3 libxml2-dev libxslt-dev
 sudo pip3 install requests Image bs4 lxml python-slugify
+(lxml takes some minutes to build on raspi)
 ~~~~
 
 on osx/windows, install python3 separately then install the dependencies with pip3 as normal

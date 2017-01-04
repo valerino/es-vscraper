@@ -6,14 +6,18 @@ This is a personal project made just for myself (at the moment), since i don't l
 
 dependencies
 ------------
+(tested on Linux, retropie/raspi, OSX)
 ~~~~
 sudo apt-get update (needed on retropie/raspi, seems....)
 sudo apt-get install python3 python3-pip3 libxml2-dev libxslt-dev
 sudo pip3 install requests Image bs4 lxml python-slugify
 (lxml takes some minutes to build on raspi)
 ~~~~
+on OSX, install python3 and any other needed library with brew (preferred)
 
-on osx/windows, install python3 separately then install the dependencies with pip3 as normal
+on Windows, install python3 and the other libraries separately (untested)
+
+In the end, install the python stuff with pip3
 
 how to write a plugin
 ---------------------
@@ -74,6 +78,16 @@ At the moment it is meant to be used for creating/updating existing gamelist.xml
 es-vscraper needs correctly named game files (i.e. 'bubble bobble.bin'), i don't like hash-based systems since a variation in the hash leads to no hits most of the times (unless you download specific rom-sets, which is not an
 option for me, too much wasted time!).
 
+installation
+------------
+(example on retropie/raspi)
+~~~~
+sudo su -
+cd /opt
+git clone https://github.com/valerino/es-vscraper
+exit
+~~~~
+
 usage
 -----
 ~~~~
@@ -115,7 +129,7 @@ optional arguments:
 
 sample usage
 ------------
-./es-vscraper.py --engine lemon-c64 --to_search "caesar the cat" --path ./caesar\ the\ cat.prg
+/opt/es-vscraper/es-vscraper.py --engine lemon-c64 --to_search "caesar the cat" --path ./caesar\ the\ cat.prg
 
 currently implemented modules
 -----------------------------
@@ -131,7 +145,7 @@ currently implemented modules
 
 todo
 ----
-- Tested on Linux and OSX, but should work on any OS with python3 (including raspberry, of course)
+- Tested on Linux, OSX, retropie/raspi
 
 - At the moment, only works for single game ('path' must be a game file)
 

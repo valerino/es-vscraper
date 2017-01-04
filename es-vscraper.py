@@ -23,6 +23,8 @@ import os
 import re
 import traceback
 
+import sys
+
 import vscraper_utils
 from lxml import etree, objectify
 
@@ -180,6 +182,9 @@ def scrape_title(engine, args):
 
 
 def main():
+    # change dir first to the script working dir
+    os.chdir(sys.path[0])
+
     parser = argparse.ArgumentParser('Build gamelist.xml for EmulationStation by querying online databases\n')
     parser.add_argument('--list_engines', help="list the available engines (and their options, if any)", action='store_const', const=True)
     parser.add_argument('--engine', help="the engine to use (use --list_engines to check available engines)", nargs='?')

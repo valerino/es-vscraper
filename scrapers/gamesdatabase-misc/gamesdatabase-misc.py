@@ -138,7 +138,7 @@ def run_direct_url(u, args):
     perform query with the given direct url
     :param u: the game url
     :param args: arguments from cmdline
-    :return: dictionary { name, publisher, developer, genre, releasedate, desc, png_img_buffer } (each may be empty)
+    :return: dictionary { name, publisher, developer, genre, releasedate, desc, png_img_buffer } (each except 'name' may be empty)
     """
     # issue request
     reply = requests.get(u)
@@ -186,7 +186,6 @@ def run_direct_url(u, args):
         game_info['desc'] = ''
 
     # image
-    machine = vscraper_utils.get_parameter(args.engine_params, 'system')
     game_info['img_buffer'] = _download_image(soup, args)
 
     return game_info
@@ -221,16 +220,10 @@ def _check_response(reply, the_system):
     check server response (not found, single, multi)
     :param reply: the server reply
     :param the_system: the system of interest
-    :return: [{name,publisher,year,url}] or throws GameNotFoundException
+    :return: [{name,publisher,year,url,system}] (each except 'name' may be empty)
     """
     html = reply.content
     soup = BeautifulSoup(html, 'html.parser')
-
-    # check validity
-    #games = soup.find_all('div', 'ginfo')
-    #if len(games) is 0 and soup.find('td', class_='normalheadblank') is None:
-    #    # not found
-    #    raise vscraper_utils.GameNotFoundException
 
     all_systems = soup.find_all(_find_a_text_system)
     games = []
@@ -259,7 +252,9 @@ def run(args):
     """
     perform query with the given game title
     :param args: arguments from cmdline
-    :return: dictionary { name, publisher, developer, genre, releasedate, desc, png_img_buffer } (each may be empty)
+    :throws vscraper_utils.GameNotFoundException when a game is not found
+    :throws vscraper_utils.MultipleChoicesException when multiple choices are found. ex.choices() returns [{ name, publisher, year, url, system}] (each except 'name' may be empty)
+    :return: dictionary { name, publisher, developer, genre, releasedate, desc, png_img_buffer } (each except 'name' may be empty)
     """
     if args.engine_params is None:
         print(

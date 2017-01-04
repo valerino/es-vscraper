@@ -8,32 +8,34 @@ dependencies
 ------------
 ~~~~
 sudo apt-get install python3 python3-pip3
-sudo pip3 install requests Image bs4 lxml
+sudo pip3 install requests Image bs4 lxml python-slugify
 ~~~~
 
 on osx/windows, install python3 separately then install the dependencies with pip3 as normal
 
 how to write a plugin
 ---------------------
-. create subdirectory in 'scrapers', named 'name-system' (i.e. 'lemon-amiga')
+- create subdirectory in 'scrapers', named 'name-system' (i.e. 'lemon-amiga')
 
-. implement 'name-system.py' module (i.e. 'scrapers/lemon-amiga.py')
+- implement 'name-system.py' module (i.e. 'scrapers/lemon-amiga.py')
 
-. each plugin must implement the following functions:
+- each plugin must implement the following functions:
 ~~~~
-def run_direct_url(u, img_index=0, img_cover=False, engine_params=None):
+def run_direct_url(u, args):
   """
   perform query with the given direct url
   :param u: the game url
   :param args: arguments from cmdline
-  :return: dictionary { name, publisher, developer, genre, releasedate, desc, png_img_buffer } (each may be empty)
+  :return: dictionary { name, publisher, developer, genre, releasedate, desc, png_img_buffer } (each except 'name' may be empty)
   """
 
-def run(to_search, img_index=0, img_cover=False, engine_params=None):
+def run(args):
   """
   perform query with the given game title
   :param args: arguments from cmdline
-  :return: dictionary { name, publisher, developer, genre, releasedate, desc, png_img_buffer } (each may be empty)
+  :throws vscraper_utils.GameNotFoundException when a game is not found
+  :throws vscraper_utils.MultipleChoicesException when multiple choices are found. ex.choices() returns [{ name, publisher, year, url, system}] (each except 'name' may be empty)
+  :return: dictionary { name, publisher, developer, genre, releasedate, desc, png_img_buffer } (each except 'name' may be empty)
   """
 
 def name():
@@ -116,21 +118,20 @@ sample usage
 
 currently implemented modules
 -----------------------------
-. Commodore Amiga
-- Lemon (http://www.lemonamiga.com)
+- Commodore Amiga
+  - Lemon (http://www.lemonamiga.com)
 
-. Commodore 64
-- Lemon (http://www.lemon64.com)
+- Commodore 64
+  - Lemon (http://www.lemon64.com)
 
-. Multi
-- Games Database (http://www.gamesdatabase.org)
-(includes amstrad-cpc, apple-ii, atari-8-bit, atari-st, arcade, commodore-64, commodore-amiga, gce-vectrex, microsoft-xbox, msx, msx-2, nintendo-gameboy, nintendo-gameboy-color, nintendo-nes, nintendo-snes, sega-game-gear, sega-master-system, sega-genesis, sinclair-zx-spectrum, sony-playstation, sony-playstation-ii and possibly others)
-
+- Multi
+  - Games Database (http://www.gamesdatabase.org)
+    - supported systems: http://www.gamesdatabase.org/systems
 
 todo
 ----
-. Tested on Linux and OSX, but should work on any OS with python3 (including raspberry, of course)
+- Tested on Linux and OSX, but should work on any OS with python3 (including raspberry, of course)
 
-. At the moment, only works for single game ('path' must be a game file)
+- At the moment, only works for single game ('path' must be a game file)
 
-. Implement more scrapers :)
+- Implement more scrapers :)

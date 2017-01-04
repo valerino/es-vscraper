@@ -122,7 +122,7 @@ def run_direct_url(u, args):
     perform query with the given direct url
     :param u: the game url
     :param args: arguments from cmdline
-    :return: dictionary { name, publisher, developer, genre, releasedate, desc, png_img_buffer } (each may be empty)
+    :return: dictionary { name, publisher, developer, genre, releasedate, desc, png_img_buffer } (each except 'name' may be empty)
     """
     # issue request
     reply = requests.get(u)
@@ -175,7 +175,8 @@ def _check_response(reply):
     """
     check server response (not found, single, multi)
     :param reply: the server reply
-    :return: [{name,publisher,year,url}] or {url} or throws GameNotFoundException
+    :throws vscraper_utils.GameNotFoundException when a game is not found
+    :return: [{name,publisher,year,url}] (each except 'name' may be empty)
     """
     html = reply.content
     soup = BeautifulSoup(html, 'html.parser')
@@ -201,7 +202,9 @@ def run(args):
     """
     perform query with the given game title
     :param args: arguments from cmdline
-    :return: dictionary { name, publisher, developer, genre, releasedate, desc, png_img_buffer } (each may be empty)
+    :throws vscraper_utils.GameNotFoundException when a game is not found
+    :throws vscraper_utils.MultipleChoicesException when multiple choices are found. ex.choices() returns [{ name, publisher, year, url, system}] (each except 'name' may be empty)
+    :return: dictionary { name, publisher, developer, genre, releasedate, desc, png_img_buffer } (each except 'name' may be empty)
     """
     # get game id
     params = {'list_title': args.to_search}

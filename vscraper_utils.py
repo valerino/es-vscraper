@@ -32,7 +32,7 @@ class MultipleChoicesException(Exception):
     def choices(self):
         """
         the entries
-        :return: [{ name, publisher, year, url}]
+        :return: [{ name, publisher, year, url, system}]
         """
         return self._choices
 

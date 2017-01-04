@@ -112,14 +112,15 @@ def scrape_title(engine, args):
         print('Downloading data for %s' % args.to_search)
         game_info = engine.run(args)
     except vscraper_utils.GameNotFoundException as e:
-        print('Cannot find %s on %s' % (args.to_search, engine.name()))
+        print('Cannot find "%s", scraper="%s"' % (args.to_search, engine.name()))
         return
 
     except vscraper_utils.MultipleChoicesException as e:
         print('Multiple titles found for %s:' % args.to_search)
         i = 1
         for choice in e.choices():
-            print('%s: %s, %s, %s' % (i, choice['name'], choice['publisher'], choice['year']))
+            print('%s: [%s] %s, %s, %s' % (i, choice['system'] if 'system' in choice else '-',
+                                           choice['name'], choice['publisher'], choice['year'] if 'year' in choice else '?'))
             i += 1
         if args.unattended:
             # use the first entry

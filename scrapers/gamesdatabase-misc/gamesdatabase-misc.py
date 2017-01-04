@@ -16,9 +16,8 @@ IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMA
 OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 """
 
-import re
-
 import requests
+from slugify import slugify
 from bs4 import BeautifulSoup
 import vscraper_utils
 
@@ -138,6 +137,7 @@ def run_direct_url(u, args):
     """
     perform query with the given direct url
     :param u: the game url
+    :param args: arguments from cmdline
     :return: dictionary { name, publisher, developer, genre, releasedate, desc, png_img_buffer } (each may be empty)
     """
     # issue request
@@ -192,36 +192,67 @@ def run_direct_url(u, args):
     return game_info
 
 
-def _check_response(reply):
+def _find_a_text_system(tag):
+    if tag.name == 'a' and "'GridView1','System$" in tag['href']:
+        return True
+    return False
+
+
+def _find_a_text_game(tag):
+    if tag.name == 'a' and "'GridView1','GAME$" in tag['href']:
+        return True
+    return False
+
+
+def _find_a_text_publisher(tag):
+    if tag.name == 'a' and "'GridView1','PUB$" in tag['href']:
+        return True
+    return False
+
+
+def _find_a_text_year(tag):
+    if tag.name == 'a' and "'GridView1','YR$" in tag['href']:
+        return True
+    return False
+
+
+def _check_response(reply, the_system):
     """
     check server response (not found, single, multi)
     :param reply: the server reply
+    :param the_system: the system of interest
     :return: [{name,publisher,year,url}] or throws GameNotFoundException
     """
     html = reply.content
     soup = BeautifulSoup(html, 'html.parser')
 
     # check validity
-    games = soup.find_all('div', 'ginfo')
-    if len(games) is 0 and soup.find('td', class_='normalheadblank') is None:
+    #games = soup.find_all('div', 'ginfo')
+    #if len(games) is 0 and soup.find('td', class_='normalheadblank') is None:
+    #    # not found
+    #    raise vscraper_utils.GameNotFoundException
+
+    all_systems = soup.find_all(_find_a_text_system)
+    games = []
+    for g in all_systems:
+        slugified_text = slugify(g.text)
+        slugified_system = slugify(the_system)
+        if slugified_system in slugified_text:
+            # found a game entry for the requested system
+            p = g.parent.parent.parent
+            entry = {}
+            entry['name'] = p.find_all(_find_a_text_game)[1].text
+            entry['publisher'] = p.find(_find_a_text_publisher).text
+            entry['year'] = p.find(_find_a_text_year).text
+            entry['url'] = 'http://www.gamesdatabase.org/game/%s/%s' % (slugified_text, slugify(entry['name']))
+            entry['system'] = g.text
+            games.append(entry)
+
+    if len(games) is 0:
         # not found
         raise vscraper_utils.GameNotFoundException
 
-    choices = []
-    if len(games) is not 0:
-        # build a list of all and return MultiChoicesException
-        for g in games:
-            entry = {}
-            entry['name'] = vscraper_utils.find_href(g, 'details.php')[0].text
-            entry['url'] = 'http://www.lemon64.com/games/%s' % (vscraper_utils.find_href(g, 'details.php')[0]['href'])
-            vscraper_utils.add_text_from_href(g, '?year', entry, 'year')
-            vscraper_utils.add_text_from_href(g, '?publisher', entry, 'publisher')
-            choices.append(entry)
-        return choices
-
-    # single entry
-    choices.append({"url": reply.url})
-    return choices
+    return games
 
 
 def run(args):
@@ -238,15 +269,22 @@ def run(args):
     # get system
     s = vscraper_utils.get_parameter(args.engine_params, 'system')
 
-    # normalize game name
-    game = re.sub('[^0-9a-zA-Z]+', '-', args.to_search)
-    game = game.replace('--', '-')
+    # get game id
+    params = {'in': 1, 'searchtext': args.to_search, 'searchtype': 1}
+    u = 'http://www.gamesdatabase.org/list.aspx'
+    reply = requests.get(u, params=params)
 
-    # get url
-    u = 'http://www.gamesdatabase.org/game/%s/%s' % (s, game)
+    # check response
+    if not reply.ok:
+        raise ConnectionError
 
-    # reissue
-    return run_direct_url(u, args)
+    choices = _check_response(reply, s)
+    if len(choices) > 1:
+        # return to es-vscraper with a multi choice
+        raise vscraper_utils.MultipleChoicesException(choices)
+
+    # got single response, reissue
+    return run_direct_url(choices[0]['url'], args)
 
 
 def name():
@@ -270,18 +308,7 @@ def systems():
     the related system/s
     :return: string (i.e. 'Commodore 64')
     """
-    return """acorn-archimedes,acorn-atom,acorn-bbc-micro,acorn-electron,amstrad-cpc,amstrad-gx4000,apple-ii,arcade,atari-2600,atari-5200,atari-7800,
-        atari-8-bit,atari-jaguar,atari-jaguar-cd,atari-lynx,atari-st,bally-astrocade,bandai-wonderswan,bandai-wonderswan-color,casio-loopy,casio-pv-1000,
-        coleco-vision,commodore-128,commodore-64,commodore-amiga,commodore-amiga-cd32,commodore-cdtv,commodore-pet,commodore-vic-20,dragon-32-64,emerson-arcadia-2001,
-        entex-adventure-vision,epoch-super-cassette-vision,fairchild-channel-f,funtech-super-acan,gamepark-gp32,gce-vectrex,genesis-microchip-nuon,hartung-game-master,
-        interton-vc-4000,laserdisc,magnavox-odyssey,magnavox-odyssey-2,mattel-intellivision,mega-duck,memotech-mtx,mgt-sam-coupe,microsoft-xbox,microsoft-xbox-360,
-        microsoft-xbox-live-arcade,msx,msx-2,msx-2+,msx-laserdisc,mugen,nec-pc-engine,nec-pc-engine-cd,nec-pc-fx,nec-supergrafx,nec-turbografx-cd,nec-turbografx-16,nintendo-arcade-systems,
-        nintendo-ds,nintendo-famicom-disk-system,nintendo-game-boy,nintendo-game-boy-advance,nintendo-game-boy-color,nintendo-gamecube,nintendo-n64,nintendo-nes,nintendo-pokemon-mini,
-        nintendo-snes,nintendo-super-gameboy,nintendo-virtual-boy,nintendo-wii,openbor,panasonic-3do,philips-cd-i,philips-vg-5000,philips-videopac+,popcap,rca-studio-ii,sammy-atomiswave,
-        scummvm,sega-32x,sega-cd,sega-dreamcast,sega-game-gear,sega-genesis,sega-master-system,sega-model-2,sega-model-3,sega-naomi,sega-nomad,sega-pico,sega-saturn,sega-sc-3000,sega-sg-1000,
-        sega-st-v,sinclair-zx-spectrum,sinclair-zx-81,snk-neo-geo-aes,snk-neo-geo-cd,snk-neo-geo-mvs,snk-neo-geo-pocket,snk-neo-geo-pocket-color,sony-playstation,sony-playstation-2,sony-psp,
-        sord-m5,taito-type-x,taito-type-x2,tandy-trs-80,tandy-trs-80-coco,tangerine-oric,texas-instruments-ti-99/4a,tiger-game.com,touhou-project,valve-steam,vtech-creativision,
-        watara-supervision,wow-action-max"""
+    return 'look at http://www.gamesdatabase.org/systems (use string/substring, i.e. "amiga")'
 
 
 def engine_help():

@@ -230,7 +230,7 @@ def name():
     the plugin name
     :return: string (i.e. 'lemon64')
     """
-    return 'lemon-64'
+    return 'lemon-c64'
 
 
 def url():

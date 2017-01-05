@@ -29,7 +29,7 @@ import vscraper_utils
 from lxml import etree, objectify
 
 SCRAPERS_FOLDER = 'scrapers'
-
+_cwd = ''
 
 def list_scrapers():
     """
@@ -155,6 +155,9 @@ def scrape_title(engine, args):
     # add title path to dictionary
     game_info['path'] = args.path
 
+    # switch back to cwd
+    os.chdir(_cwd)
+
     # create xml
     if os.path.exists(args.gamelist_path):
         # read existing
@@ -183,6 +186,7 @@ def scrape_title(engine, args):
 
 def main():
     # change dir first to the script working dir
+    _cwd = os.getcwd()
     os.chdir(sys.path[0])
 
     parser = argparse.ArgumentParser('Build gamelist.xml for EmulationStation by querying online databases\n')

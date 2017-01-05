@@ -29,7 +29,6 @@ import vscraper_utils
 from lxml import etree, objectify
 
 SCRAPERS_FOLDER = 'scrapers'
-_cwd = ''
 
 def list_scrapers():
     """
@@ -103,11 +102,12 @@ def add_game_entry(root, game_info):
     root.append(game)
 
 
-def scrape_title(engine, args):
+def scrape_title(engine, args, cwd):
     """
     scrape a single title
     :param engine an engine module
     :param args dictionary
+    :param cwd the saved working dir
     :return:
     """
     try:
@@ -136,6 +136,9 @@ def scrape_title(engine, args):
         print('Downloading data for "%s": %s, %s, %s' % (args.to_search, c['name'], c['publisher'], c['year']))
         game_info = engine.run_direct_url(c['url'], args)
 
+    # switch back to saved cwd
+    os.chdir(cwd)
+
     if game_info['img_buffer'] is not None:
         # store image, ensuring folder exists
         try:
@@ -154,9 +157,6 @@ def scrape_title(engine, args):
 
     # add title path to dictionary
     game_info['path'] = args.path
-
-    # switch back to cwd
-    os.chdir(_cwd)
 
     # create xml
     if os.path.exists(args.gamelist_path):
@@ -243,7 +243,7 @@ def main():
         mod = get_scraper(args.engine)
 
         # scrape (single)
-        scrape_title(mod, args)
+        scrape_title(mod, args, _cwd)
     except Exception as e:
         traceback.print_exc()
         exit(1)

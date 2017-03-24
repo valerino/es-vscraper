@@ -9,7 +9,7 @@ dependencies
 (tested on Linux, retropie/raspi, OSX)
 ~~~~
 sudo apt-get update (needed on retropie/raspi, seems....)
-sudo apt-get install python3 python3-pip3 libxml2-dev libxslt-dev
+sudo apt-get install python3 python3-pip libxml2-dev libxslt-dev
 sudo pip3 install requests Image bs4 lxml python-slugify
 (lxml takes some minutes to build on raspi)
 ~~~~

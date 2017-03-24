@@ -110,19 +110,27 @@ def scrape_title(engine, args, cwd):
     :param cwd the saved working dir
     :return:
     """
+    if args.to_search is None:
+        # to_search (name to be queried by scraper) is the filename without extension
+        args.to_search = os.path.splitext(os.path.basename(args.path))[0]
+    if args.img_path is None:
+        # use path/images as images path
+        args.img_path=os.path.join(os.path.dirname(args.path), 'images')
+    if args.gamelist_path is None:
+        # use path/gamelist.xml as gamelist path
+        args.gamelist_path=os.path.join(os.path.dirname(args.path), 'gamelist.xml')
+
     try:
         print('Downloading data for "%s" (%s)...' % (args.to_search, '-' if args.engine_params is None else args.engine_params))
         game_info = engine.run(args)
     except vscraper_utils.GameNotFoundException as e:
         print('Cannot find "%s", scraper="%s"' % (args.to_search, engine.name()))
         return
-
     except vscraper_utils.MultipleChoicesException as e:
         print('Multiple titles found for "%s":' % args.to_search)
         i = 1
         for choice in e.choices():
-            print('%s: [%s] %s, %s, %s' % (i, choice['system'] if 'system' in choice else '-',
-                                           choice['name'], choice['publisher'], choice['year'] if 'year' in choice else '?'))
+            print('%s: [%s] %s, %s, %s' % (i, choice['system'] if 'system' in choice else '-', choice['name'], choice['publisher'], choice['year'] if 'year' in choice else '?'))
             i += 1
         if args.unattended:
             # use the first entry
@@ -138,6 +146,11 @@ def scrape_title(engine, args, cwd):
 
     # switch back to saved cwd
     os.chdir(cwd)
+
+    # check for append
+    if args.append is not None:
+        # append this string to name
+        game_info['name'] += (' ' + args.append)
 
     if game_info['img_buffer'] is not None:
         # store image, ensuring folder exists
@@ -193,22 +206,21 @@ def main():
     parser.add_argument('--list_engines', help="list the available engines (and their options, if any)", action='store_const', const=True)
     parser.add_argument('--engine', help="the engine to use (use --list_engines to check available engines)", nargs='?')
     parser.add_argument('--engine_params', help="custom engine parameters, name=value[,name=value,...], default None", nargs='?')
+    parser.add_argument('--path', help='path to the file to be scraped', nargs='?')
     parser.add_argument('--to_search',
-                        help='the game to search for (full or sub-string), case insensitive, enclosed in " " (i.e. "game")',
+                        help='the game to search for (full or sub-string), case insensitive, enclosed in "" if containing spaces. Default is the filename part of path without extension',
                         nargs='?')
-    parser.add_argument('--path', help='path to the single game file or path to games folder', nargs='?')
     parser.add_argument('--gamelist_path',
-                        help='path to gamelist.xml (default "./gamelist.xml", will be created if not found or appended to)',
-                        nargs='?',
-                        default='./gamelist.xml')
-    parser.add_argument('--img_path', help='path to the folder where to store images (default "./images")', nargs='?',
-                        default='./images')
+                        help='path to gamelist.xml (default path/gamelist.xml, will be created if not found or appended to)',
+                        nargs='?')
+    parser.add_argument('--img_path', help='path to the folder where to store images (default path/images)', nargs='?')
     parser.add_argument('--img_index',
                         help='download image at 0-based index among available images (default 0=first found, -1 tries to download boxart if found or fallbacks to first image found)',
                         nargs="?", type=int, default=0)
     parser.add_argument('--img_thumbnail',
                         help='download image thumbnail, if possible',
                         action='store_const', const=True)
+    parser.add_argument('--append', help='append this string (enclosed in "" if containing spaces) to the game name in the gamelist.xml file', nargs='?')
     parser.add_argument('--unattended',
                         help='Automatically choose the first found entry in case of multiple entries found (default False, asks on multiple choices)',
                         action='store_const', const=True)

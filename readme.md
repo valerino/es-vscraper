@@ -121,6 +121,8 @@ optional arguments:
                         (default 0=first found, -1 tries to download boxart if
                         found or fallbacks to first image found)
   --img_thumbnail       download image thumbnail, if possible
+  --append [APPEND]     append this string (enclosed in "" if containing
+                        spaces) to the game name in the gamelist.xml file  
   --unattended          Automatically choose the first found entry in case of
                         multiple entries found (default False, asks on
                         multiple choices)
@@ -130,6 +132,7 @@ optional arguments:
 sample usage
 ------------
 /opt/es-vscraper/es-vscraper.py --engine lemon-c64 --to_search "caesar the cat" --path ./caesar\ the\ cat.prg
+/opt/es-vscraper/es-vscraper.py --engine lemon-c64 --path "./caesar\ the\ cat.prg"
 
 currently implemented modules
 -----------------------------

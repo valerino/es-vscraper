@@ -94,10 +94,11 @@ usage
 usage: Build gamelist.xml for EmulationStation by querying online databases
 
        [-h] [--list_engines] [--engine [ENGINE]]
-       [--engine_params [ENGINE_PARAMS]] [--to_search [TO_SEARCH]]
-       [--path [PATH]] [--gamelist_path [GAMELIST_PATH]]
-       [--img_path [IMG_PATH]] [--img_index [IMG_INDEX]] [--img_cover]
-       [--unattended] [--debug]
+       [--engine_params [ENGINE_PARAMS]] [--path [PATH]]
+       [--to_search [TO_SEARCH]] [--gamelist_path [GAMELIST_PATH]]
+       [--img_path [IMG_PATH]] [--img_index [IMG_INDEX]] [--img_thumbnail]
+       [--append [APPEND]] [--append_auto APPEND_AUTO] [--unattended]
+       [--delete [DELETE]] [--debug]
 
 optional arguments:
   -h, --help            show this help message and exit
@@ -105,27 +106,36 @@ optional arguments:
   --engine [ENGINE]     the engine to use (use --list_engines to check
                         available engines)
   --engine_params [ENGINE_PARAMS]
-                        custom engine parameters, name=value[,name=value,...], default None
+                        custom engine parameters, name=value[,name=value,...],
+                        default None
+  --path [PATH]         path to the file to be scraped
   --to_search [TO_SEARCH]
                         the game to search for (full or sub-string), case
-                        insensitive, enclosed in " " (i.e. "game")
-  --path [PATH]         path to the single game file or path to games folder
+                        insensitive, enclosed in "" if containing spaces.
+                        Default is the filename part of path without extension
   --gamelist_path [GAMELIST_PATH]
-                        path to gamelist.xml (default "./gamelist.xml", will
+                        path to gamelist.xml (default path/gamelist.xml, will
                         be created if not found or appended to)
   --img_path [IMG_PATH]
                         path to the folder where to store images (default
-                        "./images")
+                        path/images)
   --img_index [IMG_INDEX]
                         download image at 0-based index among available images
                         (default 0=first found, -1 tries to download boxart if
                         found or fallbacks to first image found)
   --img_thumbnail       download image thumbnail, if possible
   --append [APPEND]     append this string (enclosed in "" if containing
-                        spaces) to the game name in the gamelist.xml file  
+                        spaces) to the game name in the gamelist.xml file
+  --append_auto APPEND_AUTO
+                        automatically generate n entries starting from the
+                        given one (i.e. --append_auto 2 --path=./game1.d64
+                        generates "game (disk 1)" pointing to ./game1.d64 and
+                        "game (disk 2)" pointing to ./game2.d64)
   --unattended          Automatically choose the first found entry in case of
                         multiple entries found (default False, asks on
                         multiple choices)
+  --delete [DELETE]     delete all the entries whose path matches this regex
+                        from the gamelist.xml (needs --gamelist_path)
   --debug               Print scraping result on the console
 ~~~~
 

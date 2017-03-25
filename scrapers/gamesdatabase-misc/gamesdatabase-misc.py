@@ -275,10 +275,12 @@ def _check_response(reply, the_system):
             # found a game entry for the requested system
             p = g.parent.parent.parent
             entry = {}
-            entry['name'] = p.find_all(_find_a_text_game)[1].text
+            entry['name'] = p.find_all(_find_a_text_game)[1].text.replace('\'','')
             entry['publisher'] = p.find(_find_a_text_publisher).text
             entry['year'] = p.find(_find_a_text_year).text
-            entry['url'] = 'http://www.gamesdatabase.org/game/%s/%s' % (slugified_text, slugify(entry['name']))
+            slugified_gamename = slugify(entry['name'])
+            # print('system: %s, game: %s' % (slugified_text, slugified_gamename))
+            entry['url'] = 'http://www.gamesdatabase.org/game/%s/%s' % (slugified_text, slugified_gamename)
             entry['system'] = g.text
             games.append(entry)
 

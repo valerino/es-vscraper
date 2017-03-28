@@ -199,11 +199,6 @@ def run_direct_url(u, args):
         container = soup.find('span', id='Out')
         idx = container.contents[0].text.find(' - ')
         game_info['name'] = container.contents[0].text[:idx]
-        if args.engine_params is not None:
-            # handle multi-disk
-            p = vscraper_utils.get_parameter(args.engine_params, 'disk_num')
-            if len(p) > 0:
-                game_info['name'] = vscraper_utils.add_disk(game_info['name'], p)
     except:
         raise vscraper_utils.GameNotFoundException
 
@@ -346,7 +341,7 @@ def systems():
     the related system/s
     :return: string (i.e. 'Commodore 64')
     """
-    return 'look at http://www.gamesdatabase.org/systems (use string/substring, i.e. "amiga")'
+    return 'Multiple (http://www.gamesdatabase.org/systems)'
 
 
 def engine_help():
@@ -354,6 +349,6 @@ def engine_help():
     help on engine specific '--engine_params' and such
     :return: string
     """
-    return """disk_num=n (set disk number)
-        system=name (target system)
+    return """system=name: specifies target system, substring allowed ("amiga", "spectrum", "coleco", ...)    
         note: img_index=0 (default) downloads in-game screen, img_index=1 downloads title screen (fallback to in-game if not found)"""
+

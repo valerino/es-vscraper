@@ -43,18 +43,6 @@ class GameNotFoundException(Exception):
     """
     pass
 
-
-def add_disk(s, disk_num):
-    """
-    append disk number to string
-    :param s: the string
-    :param disk_num: the disk number (string)
-    :return: the new string
-    """
-    ss = '%s (Disk %s)' % (s, disk_num)
-    return ss
-
-
 def get_parameter(params, name):
     """
     get parameter from csv string of name=value

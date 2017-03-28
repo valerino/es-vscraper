@@ -147,11 +147,6 @@ def run_direct_url(u, args):
     # name
     container = soup.find('strong', class_='textGameHeader')
     game_info['name'] = container.text
-    if args.engine_params is not None:
-        # handle multi-disk
-        p = vscraper_utils.get_parameter(args.engine_params, 'disk_num')
-        if len(p) > 0:
-            game_info['name'] = vscraper_utils.add_disk(game_info['name'], p)
 
     # publisher
     vscraper_utils.add_text_from_href(soup, 'list.php?list_publisher', game_info, 'publisher')
@@ -252,7 +247,7 @@ def systems():
     the related system/s
     :return: string (i.e. 'Commodore 64')
     """
-    return 'amiga'
+    return 'Commodore Amiga'
 
 
 def engine_help():
@@ -260,4 +255,4 @@ def engine_help():
     help on engine specific '--engine_params' and such
     :return: string
     """
-    return 'disk_num=n (set disk number)'
+    return ''

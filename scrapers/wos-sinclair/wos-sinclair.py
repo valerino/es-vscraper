@@ -1,5 +1,5 @@
 """
-es-vscraper module for http://www.lemon64.com
+es-vscraper module for http://www.worldofspectrum.org
 
 MIT-LICENSE
 
@@ -20,6 +20,7 @@ import re
 
 import requests
 from bs4 import BeautifulSoup
+import urllib
 import vscraper_utils
 
 
@@ -32,23 +33,18 @@ def _download_image(soup, args):
     """
     got_cover = False
     img_url = ''
+    base = 'ihttp://www.worldofspectrum.org'
 
     if args.img_index == -1:
         # try to get boxart
         try:
             if not args.img_thumbnail:
                 # prefer full size, get cover url
-                r = re.search('(.+=)([0-9]+)', soup.find('link', rel='canonical').attrs['href'])
-                gameid = r.group(2)
-                u = 'http://www.lemon64.com/games/view_cover.php?gameID=%s' % gameid
-                reply = requests.get(u)
-                html = reply.content
-                s = BeautifulSoup(html, 'html.parser')
-                img_url = s.find('img').attrs['src']
+                href = soup.find('a', target='_new')['href']
+                img_url = urllib.parse.urljoin(base, href)
             else:
                 # thumbnail
-                img_url = soup.find('img', {'name': 'imgCover'})['src']
-
+                img_url = urllib.parse.urljoin(base, soup.find('img', title='Cassette inlay')['src'])
             got_cover = True
         except Exception as e:
             # fallback to 0
@@ -57,16 +53,19 @@ def _download_image(soup, args):
 
     try:
         if not got_cover:
-            # get screenshot url, no thumbnail is available here
-            img_urls = soup.find_all('img', 'pic')
+            # get screenshot url, 0=ingame, 1=title
             try:
-                selected_img = img_urls[args.img_index]
+                if args.img_index == 0:
+                    img_url = urllib.parse.urljoin(base, soup.find('img', title='In-game screen')['src'])
+                else:
+                    img_url = urllib.parse.urljoin(base, soup.find('img', title='Loading screen')['src'])
             except:
-                # always fallback to 0, if exist
-                selected_img = img_urls[0]
-
-            img_url = selected_img.attrs['src']
-
+                # fallback to the one existing, if any
+                if args.img_index == 0:
+                    img_url = urllib.parse.urljoin(base, soup.find('img', title='Loading screen')['src'])
+                else:
+                    img_url = urllib.parse.urljoin(base, soup.find('img', title='In-game screen')['src'])
+ 
         # download
         reply = requests.get(img_url)
         img = reply.content
@@ -77,41 +76,6 @@ def _download_image(soup, args):
 
     except Exception as e:
         return None
-
-
-def _download_descr(soup):
-    """
-    download description/review
-    :param soup: the html
-    :return: description/review
-    """
-
-    # search for review / description
-    try:
-        review_url = vscraper_utils.find_href(soup, '/reviews/view.php')[0]['href']
-        reply = requests.get('http://www.lemon64.com%s' % review_url)
-
-        # got review page
-        html = reply.content
-
-        # parse desc
-        s = BeautifulSoup(html, 'html.parser')
-        descr = s.find('td', 'tablecolor').text.strip()
-        descr = descr[:descr.rfind('Downloads:')]
-        return descr
-    except:
-        # no review, try comments
-        try:
-            r = re.search('(.+=)([0-9]+)', soup.find('link', rel='canonical').attrs['href'])
-            gameid = r.group(2)
-            reply = requests.get('http://www.lemon64.com/games/comments/text.php?gameID=%s' % gameid)
-            html = reply.content
-            s = BeautifulSoup(html, 'html.parser')
-            tds = s.find_all(target='content')
-            descr = tds[0].next_sibling.next_sibling.text.strip()
-            return descr
-        except:
-            return ''
 
 
 def run_direct_url(u, args):
@@ -135,25 +99,34 @@ def run_direct_url(u, args):
     soup = BeautifulSoup(html, 'html.parser')
 
     # name
-    container = soup.find('td', class_='normalheadblank')
-    game_info['name'] = container.contents[1].text.strip()
+    game_info['name'] = soup.find('a', title = 'Get direct link to this entry').text
 
     # publisher
-    vscraper_utils.add_text_from_href(soup, 'list.php?publisher', game_info, 'publisher')
+    game_info['publisher'] = soup.find('a', title = 'Find other titles from this publisher').text
 
     # releasedate
-    vscraper_utils.add_text_from_href(soup, 'list.php?year', game_info, 'releasedate')
+    game_info['releasedate'] = soup.find('font',text='Year of release').findNext('font').text
 
     # developer
-    vscraper_utils.add_text_from_href(soup, 'list.php?coder', game_info, 'developer')
-    if game_info['developer'] == '':
-        vscraper_utils.add_text_from_href(soup, 'list.php?developer', game_info, 'developer')
+    devs = soup.find_all('a', title='Find other titles by this author')
+    d = ''
+    for dev in devs:
+        # may be more than one dev....
+        d += (dev.text + ',')
+    
+    if len(d) >=1:
+        # zap last ,
+        d = d[:-1]
+        game_info['developer'] = d
+    else:
+        # not found
+        game_info['developer'] = '-'
 
     # genre
-    vscraper_utils.add_text_from_href(soup, 'list.php?genre', game_info, 'genre')
+    game_info['genre'] = soup.find('font',text='Type').findNext('font').text
 
     # description
-    game_info['desc'] = _download_descr(soup)
+    game_info['desc'] = '-'
 
     # image
     game_info['img_buffer'] = _download_image(soup, args)
@@ -172,25 +145,35 @@ def _check_response(reply):
     soup = BeautifulSoup(html, 'html.parser')
 
     # check validity
-    games = soup.find_all('div', 'ginfo')
-    if len(games) is 0 and soup.find('td', class_='normalheadblank') is None:
+    games_table = soup.find('table', border=0, cellspacing=5)
+    if games_table is None:
         # not found
         raise vscraper_utils.GameNotFoundException
-
+    
+    # get all results
+    rows = games_table.find_all('tr')
     choices = []
-    if len(games) is not 0:
-        # build a list of all and return MultiChoicesException
-        for g in games:
-            entry = {}
-            entry['name']= vscraper_utils.find_href(g, 'details.php')[0].text
-            entry['url'] = 'http://www.lemon64.com/games/%s' % (vscraper_utils.find_href(g, 'details.php')[0]['href'])
-            vscraper_utils.add_text_from_href(g, '?year', entry, 'year')
-            vscraper_utils.add_text_from_href(g, '?publisher', entry, 'publisher')
-            choices.append(entry)
-        return choices
-
-    # single entry
-    choices.append({"url": reply.url})
+    for idx, r in enumerate(rows):
+        if idx == 0:
+            # skip first (header)
+            continue;
+        
+        entry = {}
+        cols = r.find_all('td')
+        
+        # first column is name
+        entry['name'] = vscraper_utils.find_href(cols[0],'/infoseek.cgi?')[0].text.encode('ascii','ignore').decode('utf-8')
+        entry['url'] = 'http://www.worldofspectrum.org%s' % vscraper_utils.find_href(cols[0],'/infoseek.cgi?')[0]['href']
+        
+        # year is 2nd
+        entry['year']=cols[1].find('font').text
+        
+        # publisher is 3rd
+        entry['publisher']=cols[2].find('font').text
+        
+        # done
+        choices.append(entry)
+    
     return choices
 
 
@@ -203,14 +186,14 @@ def run(args):
     :return: dictionary { name, publisher, developer, genre, releasedate, desc, png_img_buffer } (each except 'name' may be empty)
     """
     # get game id
-    params = {'type': 'title', 'name': args.to_search}
-    u = 'http://www.lemon64.com/games/list.php'
+    params = {'what': '1', 'regexp': args.to_search, 'loadpics': 3, 'yrorder': '1','scorder':'1','have':'1','also':'1','sort':'1','display':'1'}
+    u = 'http://www.worldofspectrum.org/infoseekadv.cgi'
     reply = requests.get(u, params=params)
 
     # check response
     if not reply.ok:
         raise ConnectionError
-
+    
     choices = _check_response(reply)
     if len(choices) > 1:
         # return to es-vscraper with a multi choice
@@ -225,7 +208,7 @@ def name():
     the plugin name
     :return: string (i.e. 'lemon64')
     """
-    return 'lemon-c64'
+    return 'wos-sinclair'
 
 
 def url():
@@ -233,7 +216,7 @@ def url():
     the plugin url name
     :return: string (i.e. 'http://www.lemon64.com')
     """
-    return 'http://www.lemon64.com'
+    return 'http://www.worldofspectrum.org'
 
 
 def systems():
@@ -241,7 +224,7 @@ def systems():
     the related system/s
     :return: string (i.e. 'Commodore 64')
     """
-    return 'Commodore 64'
+    return 'Sinclair ZX Spectrum/ZX-81'
 
 
 def engine_help():
@@ -249,4 +232,4 @@ def engine_help():
     help on engine specific '--engine_params' and such
     :return: string
     """
-    return ''
+    return 'note: img_index=0 (default) downloads in-game screen, img_index=1 downloads title screen (fallback to in-game if not found)'

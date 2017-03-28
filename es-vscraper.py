@@ -35,6 +35,8 @@ def list_scrapers():
     get scrapers in ./scrapers folder
     :return: [ modules]
     """
+    cwd = os.getcwd()
+    os.chdir(sys.path[0])
     scrapers = []
     files = os.listdir('./%s' % SCRAPERS_FOLDER)
     for f in files:
@@ -47,7 +49,8 @@ def list_scrapers():
             scrapers.append(mod)
         except:
             continue
-
+    
+    os.chdir(cwd)
     return scrapers
 
 
@@ -57,20 +60,26 @@ def get_scraper(engine):
     :param engine: scraper name
     :return: module
     """
+    cwd=os.getcwd()
+    os.chdir(sys.path[0])
     path = os.path.join('./scrapers', engine)
     if not os.path.exists(path) or not os.path.exists(os.path.join(path, '%s.py' % engine)):
+        os.chdir(cwd)
         raise FileNotFoundError('Scraper "%s" is not installed!' % engine)
 
     try:
         scraper = '%s.%s.%s' % (SCRAPERS_FOLDER, engine, engine)
+        os.chdir(cwd)
         return importlib.import_module(scraper)
     except Exception as e:
+        os.chdir(cwd)
         raise ImportError('Cannot import scraper "%s"' % engine)
 
 
-def add_game_entry(root, game_info):
+def add_game_entry(args, root, game_info):
     """
     adds/replace an entry to the gamelist xml
+    :param args: dictionary
     :param root: 'gameList' root entry
     :param game_info: a dictionary
     :return:
@@ -97,19 +106,25 @@ def add_game_entry(root, game_info):
     game.desc = game_info['desc']
     game.genre = game_info['genre']
     game.releasedate = game_info['releasedate']
-    game.path = game_info['path']
-    game.image = game_info['image']
+    if args.relative_paths:
+        # games and images are relative paths
+        if game_info['image'] is not None:
+            game.image = os.path.join('./images', os.path.basename(game_info['image']));
+        game.path = os.path.join('./', os.path.basename(game_info['path']));
+    else:
+        game.path = game_info['path'] 
+        if game_info['image'] is not None:
+            game.image = game_info['image']
 
     # append entry
     root.append(game)
 
 
-def scrape_title(engine, args, cwd):
+def scrape_title(engine, args):
     """
     scrape a single title
     :param engine an engine module
     :param args dictionary
-    :param cwd the saved working dir
     :return:
     """
     if not os.path.exists(args.path):
@@ -150,9 +165,6 @@ def scrape_title(engine, args, cwd):
         print('Downloading data for "%s": %s, %s, %s' % (args.to_search, c['name'], c['publisher'], c['year']))
         game_info = engine.run_direct_url(c['url'], args)
 
-    # switch back to saved cwd
-    os.chdir(cwd)
-
     # check for append
     if args.append is not None:
         # append this string to name
@@ -173,10 +185,10 @@ def scrape_title(engine, args, cwd):
         game_info['image'] = img_path
     else:
         game_info['image'] = None
-
+    
     # add title path to dictionary
     game_info['path'] = args.path
-
+     
     # create xml
     if os.path.exists(args.gamelist_path):
         # read existing
@@ -188,7 +200,7 @@ def scrape_title(engine, args, cwd):
     # add entry
     if args.append_auto == 0:
         # single entry
-        add_game_entry(xml, game_info)
+        add_game_entry(args, xml, game_info)
     else:
         # add multiple entries
         idx = 1
@@ -213,7 +225,7 @@ def scrape_title(engine, args, cwd):
             game_info['name'] = name
             
             # add entry
-            add_game_entry(xml,game_info)
+            add_game_entry(args, xml,game_info)
 
     # rewrite
     print('Writing XML: %s' % args.gamelist_path)
@@ -262,10 +274,6 @@ def delete_entries(args):
     vscraper_utils.write_to_file(args.gamelist_path, s)
 
 def main():
-    # change dir first to the script working dir
-    _cwd = os.getcwd()
-    os.chdir(sys.path[0])
-
     parser = argparse.ArgumentParser('Build gamelist.xml for EmulationStation by querying online databases\n')
     parser.add_argument('--list_engines', help="list the available engines (and their options, if any)", action='store_const', const=True)
     parser.add_argument('--engine', help="the engine to use (use --list_engines to check available engines)", nargs='?')
@@ -292,6 +300,7 @@ def main():
                         help='Automatically choose the first found entry in case of multiple entries found (default False, asks on multiple choices)',
                         action='store_const', const=True)
     parser.add_argument('--delete', help='delete all the entries whose path matches this regex from the gamelist.xml (needs --gamelist_path)', nargs='?')
+    parser.add_argument('--relative_paths', help='put relative paths for images and game files in the gamelist.xml (./images/image.png and ./game.xxx)', action='store_const', const=True);
     parser.add_argument('--debug',
                         help='Print scraping result on the console',
                         action='store_const', const=True)
@@ -309,11 +318,13 @@ def main():
             print('scraper: %s' % s.name())
             print('url: %s' % s.url())
             print('supported system/s: %s' % s.systems())
-            print('custom options:\n\t%s' % s.engine_help())
+            opts = s.engine_help()
+            if opts is not None and opts != '':
+                print('custom options:\n\t%s' % opts)
             print('-----------------------------------------------------------------')
 
         exit(0)
-    
+     
     if args.delete is not None and args.gamelist_path is None:
         print('--gamelist_path is required in delete mode')
         exit(1)
@@ -331,7 +342,7 @@ def main():
             mod = get_scraper(args.engine)
 
             # scrape (single)
-            scrape_title(mod, args, _cwd)
+            scrape_title(mod, args)
     except Exception as e:
         traceback.print_exc()
         exit(1)

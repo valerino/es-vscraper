@@ -106,15 +106,9 @@ def add_game_entry(args, root, game_info):
     game.desc = game_info['desc']
     game.genre = game_info['genre']
     game.releasedate = game_info['releasedate']
-    if args.relative_paths:
-        # games and images are relative paths
-        if game_info['image'] is not None:
-            game.image = os.path.join('./images', os.path.basename(game_info['image']));
-        game.path = os.path.join('./', os.path.basename(game_info['path']));
-    else:
-        game.path = game_info['path'] 
-        if game_info['image'] is not None:
-            game.image = game_info['image']
+    game.path = os.path.abspath(game_info['path'])
+    if game_info['image'] is not None:
+        game.image = os.path.abspath(game_info['image'])
 
     # append entry
     root.append(game)
@@ -300,7 +294,6 @@ def main():
                         help='Automatically choose the first found entry in case of multiple entries found (default False, asks on multiple choices)',
                         action='store_const', const=True)
     parser.add_argument('--delete', help='delete all the entries whose path matches this regex from the gamelist.xml (needs --gamelist_path)', nargs='?')
-    parser.add_argument('--relative_paths', help='put relative paths for images and game files in the gamelist.xml (./images/image.png and ./game.xxx)', action='store_const', const=True);
     parser.add_argument('--debug',
                         help='Print scraping result on the console',
                         action='store_const', const=True)

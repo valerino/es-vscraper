@@ -149,7 +149,9 @@ optional arguments:
 sample usage
 ------------
 /opt/es-vscraper/es-vscraper.py --engine lemon-c64 --to_search "caesar the cat" --path "/home/pi/RetroPie/roms/c64/caesar.prg"
+
 /opt/es-vscraper/es-vscraper.py --engine lemon-c64 --path "/home/pi/RetroPie/roms/c64/caesar\ the\ cat.prg"
+
 /opt/es-vscraper/es-vscraper.py --engine lemon-c64 --path /home/pi/RetroPie/roms/c64
 
 currently implemented modules

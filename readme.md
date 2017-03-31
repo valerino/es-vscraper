@@ -77,6 +77,9 @@ es-vscraper needs correctly named game files (i.e. 'bubble bobble.bin'), i don't
 either, you may use the 'to_search' option to search for a specific name, associating it to the file you provide via 'path' (only for single query mode)
 
 ~~~~
+-------
+WARNING
+-------
 be careful to use multi-query mode (when 'path' refers to an entire folder): 
 it may take long and/or cause your ip to be banned for hammering 
 (even though i added random sleep() of few seconds between queries)!
@@ -89,7 +92,6 @@ installation
 sudo su -
 cd /opt
 git clone https://github.com/valerino/es-vscraper
-exit
 ~~~~
 
 usage
@@ -114,6 +116,14 @@ optional arguments:
                         default None
   --path [PATH]         path to the file to be scraped, or to a folder with
                         (correctly named) files to be scraped
+  --sleep_no_hammer [SLEEP_NO_HAMMER]
+                        number of maximum seconds to sleep after each scrape
+                        when path refers to a folder. Default is 15 (random
+                        between 1 and 15)
+  --strip_start     [STRIP_START]    
+                        strip characters from path starting from the given ones before
+                        using 'path' as search key (i.e. --path "./caesar the cat (eng)"
+                         --strip_start "(" searches for "caesar the cat")
   --folder_overwrite    if path refers to a folder, existing entries in
                         gamelist.xml are overwritten. Default is to skip
                         existing entries

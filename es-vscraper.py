@@ -402,6 +402,7 @@ def main():
                 scrape_folder(mod,args)
             else:
                 # scrape single file
+                args.path_is_dir = False
                 scrape_title(mod, args)
     except Exception as e:
         traceback.print_exc()

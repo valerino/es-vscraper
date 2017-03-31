@@ -128,6 +128,11 @@ def scrape_title(engine, args):
 
     if args.to_search is None:
         # to_search (name to be queried by scraper) is the filename without extension
+        if args.strip_start is not None:
+            # strip characters after the given ones
+            l = re.split(('[%s]+' % re.escape(args.strip_start)), args.path)
+            args.path = l[0].strip()
+
         args.to_search = os.path.splitext(os.path.basename(args.path))[0]
 
     if args.img_path is None:
@@ -276,8 +281,8 @@ def scrape_folder(mod, args):
             args.to_search = None
             res = scrape_title(mod,args)
             if res == 0:
-                # sleep between 5 and 15 seconds (avoid hammering)
-                time.sleep(random.randint(5,15))
+                # sleep between 1 and 15 seconds (avoid hammering)
+                time.sleep(random.randint(1,args.sleep_no_hammer))
 
         except Exception as e:
             # show error and continue
@@ -325,6 +330,10 @@ def main():
     parser.add_argument('--engine', help="the engine to use (use --list_engines to check available engines)", nargs='?')
     parser.add_argument('--engine_params', help="custom engine parameters, name=value[,name=value,...], default None", nargs='?')
     parser.add_argument('--path', help='path to the file to be scraped, or to a folder with (correctly named) files to be scraped', nargs='?')
+    parser.add_argument('--sleep_no_hammer', help='sleep random seconds (1-n) between each scraped entries when path refers to a folder. Default is 15',
+        nargs='?', default=15)
+    parser.add_argument('--strip_start', help='strip characters (until end) starting from the given ones, before using \'path\' as search key (i.e. --path "./caesar the cat (eng)"  --strip_start "(" searches for "caesar the cat")',
+        nargs='?')
     parser.add_argument('--folder_overwrite', help='if path refers to a folder, existing entries in gamelist.xml are overwritten. Default is to skip existing entries',
         action='store_const', const=True)
     parser.add_argument('--to_search',

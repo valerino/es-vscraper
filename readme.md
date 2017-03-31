@@ -80,8 +80,8 @@ either, you may use the 'to_search' option to search for a specific name, associ
 -------
 WARNING
 -------
-be careful to use multi-query mode (when 'path' refers to an entire folder): 
-it may take long and/or cause your ip to be banned for hammering 
+be careful to use multi-query mode (when 'path' refers to an entire folder):
+it may take long and/or cause your ip to be banned for hammering
 (even though i added random sleep() of few seconds between queries)!
 ~~~~
 
@@ -97,14 +97,17 @@ git clone https://github.com/valerino/es-vscraper
 usage
 -----
 ~~~~
+pi@retropie:/opt/es-vscraper $ ./es-vscraper.py --help
 usage: Build gamelist.xml for EmulationStation by querying online databases
 
        [-h] [--list_engines] [--engine [ENGINE]]
-       [--engine_params [ENGINE_PARAMS]] [--path [PATH]] [--folder_overwrite]
-       [--to_search [TO_SEARCH]] [--gamelist_path [GAMELIST_PATH]]
-       [--img_path [IMG_PATH]] [--img_index [IMG_INDEX]] [--img_thumbnail]
-       [--append [APPEND]] [--append_auto APPEND_AUTO] [--unattended]
-       [--delete [DELETE]] [--debug]
+       [--engine_params [ENGINE_PARAMS]] [--path [PATH]]
+       [--sleep_no_hammer [SLEEP_NO_HAMMER]] [--strip_start [STRIP_START]]
+       [--folder_overwrite] [--to_search [TO_SEARCH]]
+       [--gamelist_path [GAMELIST_PATH]] [--img_path [IMG_PATH]]
+       [--img_index [IMG_INDEX]] [--img_thumbnail] [--append [APPEND]]
+       [--append_auto APPEND_AUTO] [--unattended] [--delete [DELETE]]
+       [--debug]
 
 optional arguments:
   -h, --help            show this help message and exit
@@ -117,13 +120,13 @@ optional arguments:
   --path [PATH]         path to the file to be scraped, or to a folder with
                         (correctly named) files to be scraped
   --sleep_no_hammer [SLEEP_NO_HAMMER]
-                        number of maximum seconds to sleep after each scrape
-                        when path refers to a folder. Default is 15 (random
-                        between 1 and 15)
-  --strip_start     [STRIP_START]    
-                        strip characters from path starting from the given ones before
-                        using 'path' as search key (i.e. --path "./caesar the cat (eng)"
-                         --strip_start "(" searches for "caesar the cat")
+                        sleep random seconds (1-n) between each scraped
+                        entries when path refers to a folder. Default is 15
+  --strip_start [STRIP_START]
+                        strip characters (until end) starting from the given
+                        ones, before using 'path' as search key (i.e. --path
+                        "./caesar the cat (eng)" --strip_start "(" searches
+                        for "caesar the cat")
   --folder_overwrite    if path refers to a folder, existing entries in
                         gamelist.xml are overwritten. Default is to skip
                         existing entries

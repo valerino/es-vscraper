@@ -356,7 +356,7 @@ def main():
     parser.add_argument('--unattended',
                         help='Automatically choose the first found entry in case of multiple entries found (default False, asks on multiple choices)',
                         action='store_const', const=True)
-    parser.add_argument('--delete', help='delete all the entries whose path matches this regex from the gamelist.xml (needs --gamelist_path)', nargs='?')
+    parser.add_argument('--delete', help='delete all the entries whose path matches this regex from the gamelist.xml (needs --gamelist_path, anything else is ignored)', nargs='?')
     parser.add_argument('--debug',
                         help='Print scraping result on the console',
                         action='store_const', const=True)

@@ -157,7 +157,7 @@ optional arguments:
                         multiple entries found (default False, asks on
                         multiple choices)
   --delete [DELETE]     delete all the entries whose path matches this regex
-                        from the gamelist.xml (needs --gamelist_path)
+                        from the gamelist.xml (needs --gamelist_path, anything else is ignored))
   --debug               Print scraping result on the console
 ~~~~
 

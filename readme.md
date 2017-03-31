@@ -77,7 +77,9 @@ es-vscraper needs correctly named game files (i.e. 'bubble bobble.bin'), i don't
 either, you may use the 'to_search' option to search for a specific name, associating it to the file you provide via 'path' (only for single query mode)
 
 ~~~~
-be careful to use multi-query mode (when 'path' refers to an entire folder): it may take long and/or cause your ip to be banned for hammering (even though i added random sleep() of few seconds between queries)!
+be careful to use multi-query mode (when 'path' refers to an entire folder): 
+it may take long and/or cause your ip to be banned for hammering 
+(even though i added random sleep() of few seconds between queries)!
 ~~~~
 
 installation
@@ -148,11 +150,13 @@ optional arguments:
 
 sample usage
 ------------
+~~~~
 /opt/es-vscraper/es-vscraper.py --engine lemon-c64 --to_search "caesar the cat" --path "/home/pi/RetroPie/roms/c64/caesar.prg"
 
 /opt/es-vscraper/es-vscraper.py --engine lemon-c64 --path "/home/pi/RetroPie/roms/c64/caesar\ the\ cat.prg"
 
 /opt/es-vscraper/es-vscraper.py --engine lemon-c64 --path /home/pi/RetroPie/roms/c64
+~~~~
 
 currently implemented modules
 -----------------------------

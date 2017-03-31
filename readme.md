@@ -73,10 +73,12 @@ def engine_help():
 
 notes
 ----
-At the moment es-vscraper is meant to be used for creating/updating existing gamelist.xml by searching for single games (need to check with each database provider for permission to implement directory-tree scanning, might be too heavy for their traffic).
+es-vscraper needs correctly named game files (i.e. 'bubble bobble.bin'), i don't like hash-based systems since a variation in the hash leads to no hits most of the times (unless you download specific rom-sets, which is not an option for me, too much wasted time!).
+either, you may use the 'to_search' option to search for a specific name, associating it to the file you provide via 'path' (only for single query mode)
 
-es-vscraper needs correctly named game files (i.e. 'bubble bobble.bin'), i don't like hash-based systems since a variation in the hash leads to no hits most of the times (unless you download specific rom-sets, which is not an
-option for me, too much wasted time!).
+~~~~
+be careful to use multi-query mode (when 'path' refers to an entire folder): it may take long and/or cause your ip to be banned for hammering (even though i added random sleep() of few seconds between queries)!
+~~~~
 
 installation
 ------------
@@ -94,7 +96,7 @@ usage
 usage: Build gamelist.xml for EmulationStation by querying online databases
 
        [-h] [--list_engines] [--engine [ENGINE]]
-       [--engine_params [ENGINE_PARAMS]] [--path [PATH]]
+       [--engine_params [ENGINE_PARAMS]] [--path [PATH]] [--folder_overwrite]
        [--to_search [TO_SEARCH]] [--gamelist_path [GAMELIST_PATH]]
        [--img_path [IMG_PATH]] [--img_index [IMG_INDEX]] [--img_thumbnail]
        [--append [APPEND]] [--append_auto APPEND_AUTO] [--unattended]
@@ -108,11 +110,16 @@ optional arguments:
   --engine_params [ENGINE_PARAMS]
                         custom engine parameters, name=value[,name=value,...],
                         default None
-  --path [PATH]         path to the file to be scraped
+  --path [PATH]         path to the file to be scraped, or to a folder with
+                        (correctly named) files to be scraped
+  --folder_overwrite    if path refers to a folder, existing entries in
+                        gamelist.xml are overwritten. Default is to skip
+                        existing entries
   --to_search [TO_SEARCH]
                         the game to search for (full or sub-string), case
                         insensitive, enclosed in "" if containing spaces.
-                        Default is the filename part of path without extension
+                        Default is the filename part of path without
+                        extension. Ignored if path refers to a folder
   --gamelist_path [GAMELIST_PATH]
                         path to gamelist.xml (default path/gamelist.xml, will
                         be created if not found or appended to)
@@ -141,8 +148,9 @@ optional arguments:
 
 sample usage
 ------------
-/opt/es-vscraper/es-vscraper.py --engine lemon-c64 --to_search "caesar the cat" --path ./caesar\ the\ cat.prg
-/opt/es-vscraper/es-vscraper.py --engine lemon-c64 --path "./caesar\ the\ cat.prg"
+/opt/es-vscraper/es-vscraper.py --engine lemon-c64 --to_search "caesar the cat" --path "/home/pi/RetroPie/roms/c64/caesar.prg"
+/opt/es-vscraper/es-vscraper.py --engine lemon-c64 --path "/home/pi/RetroPie/roms/c64/caesar\ the\ cat.prg"
+/opt/es-vscraper/es-vscraper.py --engine lemon-c64 --path /home/pi/RetroPie/roms/c64
 
 currently implemented modules
 -----------------------------
@@ -152,14 +160,13 @@ currently implemented modules
 - Commodore 64
   - Lemon (http://www.lemon64.com)
 
+- Sinclair (ZX Spectrum, ZX81)
+  - World of Spectrum (http://www.worldofspectrum.org)
+
 - Multi
   - Games Database (http://www.gamesdatabase.org)
     - supported systems: http://www.gamesdatabase.org/systems
 
 todo
 ----
-- Tested on Linux, OSX, retropie/raspi
-
-- At the moment, only works for single game ('path' must be a game file)
-
 - Implement more scrapers :)

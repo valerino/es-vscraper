@@ -22,7 +22,8 @@ import importlib
 import os
 import re
 import traceback
-
+import random
+import time
 import sys
 
 import vscraper_utils
@@ -49,7 +50,7 @@ def list_scrapers():
             scrapers.append(mod)
         except:
             continue
-    
+
     os.chdir(cwd)
     return scrapers
 
@@ -119,28 +120,41 @@ def scrape_title(engine, args):
     scrape a single title
     :param engine an engine module
     :param args dictionary
-    :return:
+    :return: 0 on success, -1 on error/skip
     """
     if not os.path.exists(args.path):
         print('%s not found!' % args.path)
-        return
+        return -1
 
     if args.to_search is None:
         # to_search (name to be queried by scraper) is the filename without extension
         args.to_search = os.path.splitext(os.path.basename(args.path))[0]
+
     if args.img_path is None:
         # use path/images as images path
         args.img_path=os.path.join(os.path.dirname(args.path), 'images')
+
     if args.gamelist_path is None:
         # use path/gamelist.xml as gamelist path
         args.gamelist_path=os.path.join(os.path.dirname(args.path), 'gamelist.xml')
+
+    if args.path_is_dir is True and args.folder_overwrite is None:
+        # check if the game is already listed in the gamelist_path
+        if os.path.exists(args.gamelist_path):
+            xml = objectify.fromstring(vscraper_utils.read_from_file(args.gamelist_path))
+            for g in xml.findall('game'):
+                if g.path == os.path.abspath(args.path):
+                    # if so, it must be skipped (not overwritten)
+                    print('Skipping entry (already present): %s' % g['name'])
+                    return -1
 
     try:
         print('Downloading data for "%s" (%s)...' % (args.to_search, '-' if args.engine_params is None else args.engine_params))
         game_info = engine.run(args)
     except vscraper_utils.GameNotFoundException as e:
         print('Cannot find "%s", scraper="%s"' % (args.to_search, engine.name()))
-        return
+        return -1
+
     except vscraper_utils.MultipleChoicesException as e:
         print('Multiple titles found for "%s":' % args.to_search)
         i = 1
@@ -179,10 +193,10 @@ def scrape_title(engine, args):
         game_info['image'] = img_path
     else:
         game_info['image'] = None
-    
+
     # add title path to dictionary
     game_info['path'] = args.path
-     
+
     # create xml
     if os.path.exists(args.gamelist_path):
         # read existing
@@ -212,12 +226,12 @@ def scrape_title(engine, args):
 
             new_path = dsk_path + ext
             game_info['path'] = new_path
-            
+
             # generates a new name
             name = base_name
-            name += (' (disk %s)' % idx_str)  
+            name += (' (disk %s)' % idx_str)
             game_info['name'] = name
-            
+
             # add entry
             add_game_entry(args, xml,game_info)
 
@@ -236,6 +250,44 @@ def scrape_title(engine, args):
 
         print(game_info)
 
+    return 0
+
+def scrape_folder(mod, args):
+    """
+    scrape an entire folder, based on filenames
+    """
+
+    # get all files in folder
+    files = os.listdir(args.path)
+    tmp = args.path
+    args.path_is_dir = True
+    for f in files:
+        if os.path.isdir(f):
+            # skip subfolders
+            continue
+        if f.lower() == 'gamelist.xml':
+            # skip gamelist
+            continue
+
+        try:
+            # process entry
+            game_path = os.path.join(tmp, f)
+            args.path = game_path
+            args.to_search = None
+            res = scrape_title(mod,args)
+            if res == 0:
+                # sleep between 5 and 15 seconds (avoid hammering)
+                time.sleep(random.randint(5,15))
+
+        except Exception as e:
+            # show error and continue
+            traceback.print_exc()
+            continue
+
+    # done
+    args.path = tmp
+
+
 def delete_entries(args):
     """
     delete one or more entries for gamelist xml, if they matches the specified regex
@@ -246,7 +298,7 @@ def delete_entries(args):
 
     # read xml
     xml = objectify.fromstring(vscraper_utils.read_from_file(args.gamelist_path))
-    modified = 0    
+    modified = 0
     for game in xml.getchildren():
         for e in game.getchildren():
             if e.tag == 'path':
@@ -272,9 +324,11 @@ def main():
     parser.add_argument('--list_engines', help="list the available engines (and their options, if any)", action='store_const', const=True)
     parser.add_argument('--engine', help="the engine to use (use --list_engines to check available engines)", nargs='?')
     parser.add_argument('--engine_params', help="custom engine parameters, name=value[,name=value,...], default None", nargs='?')
-    parser.add_argument('--path', help='path to the file to be scraped', nargs='?')
+    parser.add_argument('--path', help='path to the file to be scraped, or to a folder with (correctly named) files to be scraped', nargs='?')
+    parser.add_argument('--folder_overwrite', help='if path refers to a folder, existing entries in gamelist.xml are overwritten. Default is to skip existing entries',
+        action='store_const', const=True)
     parser.add_argument('--to_search',
-                        help='the game to search for (full or sub-string), case insensitive, enclosed in "" if containing spaces. Default is the filename part of path without extension',
+                        help='the game to search for (full or sub-string), case insensitive, enclosed in "" if containing spaces. Default is the filename part of path without extension. Ignored if path refers to a folder',
                         nargs='?')
     parser.add_argument('--gamelist_path',
                         help='path to gamelist.xml (default path/gamelist.xml, will be created if not found or appended to)',
@@ -287,9 +341,9 @@ def main():
                         help='download image thumbnail, if possible',
                         action='store_const', const=True)
     parser.add_argument('--append', help='append this string (enclosed in "" if containing spaces) to the game name in the gamelist.xml file', nargs='?')
-    parser.add_argument('--append_auto', 
-        help='automatically generate n entries starting from the given one (i.e. --append_auto 2 --path=./game1.d64 generates "game (disk 1)" pointing to ./game1.d64 and "game (disk 2)" pointing to ./game2.d64)', 
-        type=int, default=0)  
+    parser.add_argument('--append_auto',
+        help='automatically generate n entries starting from the given one (i.e. --append_auto 2 --path=./game1.d64 generates "game (disk 1)" pointing to ./game1.d64 and "game (disk 2)" pointing to ./game2.d64)',
+        type=int, default=0)
     parser.add_argument('--unattended',
                         help='Automatically choose the first found entry in case of multiple entries found (default False, asks on multiple choices)',
                         action='store_const', const=True)
@@ -317,7 +371,7 @@ def main():
             print('-----------------------------------------------------------------')
 
         exit(0)
-     
+
     if args.delete is not None and args.gamelist_path is None:
         print('--gamelist_path is required in delete mode')
         exit(1)
@@ -325,7 +379,7 @@ def main():
     if args.delete is None and (args.engine is None or args.path is None):
         print('--engine and --path are required!')
         exit(1)
-       
+
     try:
         if args.delete is not None:
             # delete entries from xml
@@ -334,8 +388,12 @@ def main():
             # get module
             mod = get_scraper(args.engine)
 
-            # scrape (single)
-            scrape_title(mod, args)
+            if os.path.isdir(args.path):
+                # scrape entire folder
+                scrape_folder(mod,args)
+            else:
+                # scrape single file
+                scrape_title(mod, args)
     except Exception as e:
         traceback.print_exc()
         exit(1)

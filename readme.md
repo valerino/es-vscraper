@@ -188,7 +188,7 @@ currently implemented modules
 
 - Multi (Atari)
   - AtariAge (http://atariage.com)
-  - supported systems: 2600, 5200, 7800, lynx, jaguar
+    - supported systems: 2600, 5200, 7800, lynx, jaguar
 
 todo
 ----

@@ -100,6 +100,16 @@ def add_text_from_href(root, substring, coll, key):
         s += tt.text + ','
     coll[key] = s[:-1]
 
+def get_text_no_tags(tag, to_strip):
+    """
+    get text from tag, stripping all given attributes
+    :param tag a tag
+    :param to_strip attribute to strip
+    :return:
+    """
+    for t in tag.find_all(to_strip):
+        t.replaceWith('')
+    return tag.text
 
 def write_to_file(path, buffer):
     """

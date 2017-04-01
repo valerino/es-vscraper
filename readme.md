@@ -186,6 +186,10 @@ currently implemented modules
   - Games Database (http://www.gamesdatabase.org)
     - supported systems: http://www.gamesdatabase.org/systems
 
+- Multi (Atari)
+  - AtariAge (http://atariage.com)
+  - supported systems: 2600, 5200, 7800, lynx, jaguar
+
 todo
 ----
 - Implement more scrapers :)

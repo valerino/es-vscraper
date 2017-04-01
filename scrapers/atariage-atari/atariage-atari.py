@@ -1,5 +1,5 @@
 """
-es-vscraper module for http://www.worldofspectrum.org
+es-vscraper module for http://atariage.com
 
 MIT-LICENSE
 
@@ -24,6 +24,26 @@ import urllib
 import vscraper_utils
 
 
+def _find_a_text_softwareLabelID(tag):
+    if tag.name == 'a' and ('SoftwareLabelID' in tag['href']) and (not tag.has_attr('title')):
+        return True
+    return False
+
+def _find_b_text_year(tag):
+    if tag.name == 'b' and (tag.text.startswith('Year of Release')):
+        return True
+    return False
+
+def _find_a_text_companyID(tag):
+    if tag.name == 'a' and ('CompanyID' in tag['href']):
+        return True
+    return False
+
+def _find_a_text_programmerID(tag):
+    if tag.name == 'a' and ('ProgrammerID' in tag['href']):
+        return True
+    return False
+
 def _download_image(soup, args):
     """
     download game image
@@ -31,21 +51,24 @@ def _download_image(soup, args):
     :param args: arguments from cmdline
     :return: image buffer, or None
     """
-    got_cover = False
     img_url = ''
-    base = 'ihttp://www.worldofspectrum.org'
+    got_cover = False
 
     if args.img_index == -1:
         # try to get boxart
         try:
-            if not args.img_thumbnail:
-                # prefer full size, get cover url
-                href = soup.find('a', target='_new')['href']
-                img_url = urllib.parse.urljoin(base, href)
-            else:
-                # thumbnail
-                img_url = urllib.parse.urljoin(base, soup.find('img', title='Cassette inlay')['src'])
-            got_cover = True
+            covers = vscraper_utils.find_href(soup, 'https://atariage.com/box_page.php?')
+            cover_url = covers[0]['href']
+            reply = requests.get(cover_url)
+            html = reply.content
+            s = BeautifulSoup(html, 'html.parser')
+            img_urls = s.find_all('img')
+            for i in img_urls:
+                if '/boxes/' in i['src']:
+                    # found, get first
+                    img_url = i['src']
+                    got_cover = True
+                    break
         except Exception as e:
             # fallback to 0
             args.img_index = 0
@@ -53,18 +76,21 @@ def _download_image(soup, args):
 
     try:
         if not got_cover:
-            # get screenshot url, 0=ingame, 1=title
+            # get screenshots
+            scrs = vscraper_utils.find_href(soup, 'https://atariage.com/screenshot_page.php?')
+            scrs_url = scrs[0]['href']
+            reply = requests.get(scrs_url)
+            html = reply.content
+            s = BeautifulSoup(html, 'html.parser')
+            img_urls = s.find_all('img')
+            screens =[]
+            for s in img_urls:
+                if '/screenshots/' in s['src']:
+                    screens.append(s)
             try:
-                if args.img_index == 0:
-                    img_url = urllib.parse.urljoin(base, soup.find('img', title='In-game screen')['src'])
-                else:
-                    img_url = urllib.parse.urljoin(base, soup.find('img', title='Loading screen')['src'])
+                img_url=screens[args.img_index]['src']
             except:
-                # fallback to the one existing, if any
-                if args.img_index == 0:
-                    img_url = urllib.parse.urljoin(base, soup.find('img', title='Loading screen')['src'])
-                else:
-                    img_url = urllib.parse.urljoin(base, soup.find('img', title='In-game screen')['src'])
+                img_url=screens[0]['src']
 
         # download
         reply = requests.get(img_url)
@@ -99,16 +125,16 @@ def run_direct_url(u, args):
     soup = BeautifulSoup(html, 'html.parser')
 
     # name
-    game_info['name'] = soup.find('a', title = 'Get direct link to this entry').text
+    game_info['name'] = soup.find('span', {'class': 'gametitle'}).text
 
     # publisher
-    game_info['publisher'] = soup.find('a', title = 'Find other titles from this publisher').text
+    game_info['publisher'] = soup.find(_find_a_text_companyID).text
 
     # releasedate
-    game_info['releasedate'] = soup.find('font',text='Year of release').findNext('font').text
+    game_info['releasedate'] = vscraper_utils.get_text_no_tags(soup.find(_find_b_text_year).parent, 'b').strip()
 
     # developer
-    devs = soup.find_all('a', title='Find other titles by this author')
+    devs = soup.find_all(_find_a_text_programmerID)
     d = ''
     for dev in devs:
         # may be more than one dev....
@@ -123,10 +149,16 @@ def run_direct_url(u, args):
         game_info['developer'] = ''
 
     # genre
-    game_info['genre'] = soup.find('font',text='Type').findNext('font').text
+    game_info['genre'] = ''
 
     # description
     game_info['desc'] = ''
+    bh = soup.find_all('td', {'class': 'bodyheader'})
+    for b in bh:
+        if b.text == 'Description':
+            body = b.parent.parent.find('td',{'class':'bodytext'})
+            if body is not None:
+                game_info['desc'] = body.text.strip()
 
     # image
     game_info['img_buffer'] = _download_image(soup, args)
@@ -145,36 +177,21 @@ def _check_response(reply):
     soup = BeautifulSoup(html, 'html.parser')
 
     # check validity
-    games_table = soup.find('table', border=0, cellspacing=5)
-    if games_table is None:
-        # not found
-        raise vscraper_utils.GameNotFoundException
-
-    # get all results
-    rows = games_table.find_all('tr')
-    choices = []
-    for idx, r in enumerate(rows):
-        if idx == 0:
-            # skip first (header)
-            continue;
-
+    all_games = soup.find_all(_find_a_text_softwareLabelID)
+    games = []
+    for g in all_games:
         entry = {}
-        cols = r.find_all('td')
+        entry['name'] = g.text.strip()
+        entry['year'] = 'n/a'
+        entry['publisher'] = g.parent.findNext('td').findNext('a').text
+        entry['url'] = g['href']
+        games.append(entry)
 
-        # first column is name
-        entry['name'] = vscraper_utils.find_href(cols[0],'/infoseek.cgi?')[0].text.encode('ascii','ignore').decode('utf-8')
-        entry['url'] = 'http://www.worldofspectrum.org%s' % vscraper_utils.find_href(cols[0],'/infoseek.cgi?')[0]['href']
+    if len(games) is 0:
+        # not found
+       raise vscraper_utils.GameNotFoundException
 
-        # year is 2nd
-        entry['year']=cols[1].find('font').text
-
-        # publisher is 3rd
-        entry['publisher']=cols[2].find('font').text
-
-        # done
-        choices.append(entry)
-
-    return choices
+    return games
 
 
 def run(args):
@@ -185,9 +202,21 @@ def run(args):
     :throws vscraper_utils.MultipleChoicesException when multiple choices are found. ex.choices() returns [{ name, publisher, year, url, system}] (each except 'name' may be empty)
     :return: dictionary { name, publisher, developer, genre, releasedate, desc, png_img_buffer } (each except 'name' may be empty)
     """
+    if args.engine_params is None:
+        print(
+            '--engine_params system=... is required (use --list_engines to check supported systems)')
+        raise ValueError
+
+    # get system
+    engines = {'2600', '5200', '7800', 'lynx', 'jaguar'}
+    s = vscraper_utils.get_parameter(args.engine_params, 'system')
+    if s not in engines:
+        print('supported systems: %s' % engines)
+        raise ValueError
+
     # get game id
-    params = {'what': '1', 'regexp': args.to_search, 'loadpics': 3, 'yrorder': '1','scorder':'1','have':'1','also':'1','sort':'1','display':'1'}
-    u = 'http://www.worldofspectrum.org/infoseekadv.cgi'
+    params = {'searchValue': args.to_search, 'SystemID': s, 'searchType':'NORMAL', 'searchShot':'checkbox', 'searchBox':'checkbox', 'orderBy':'Name'}
+    u = 'https://atariage.com/software_list.php'
     reply = requests.get(u, params=params)
 
     # check response
@@ -208,7 +237,7 @@ def name():
     the plugin name
     :return: string (i.e. 'lemon64')
     """
-    return 'wos-sinclair'
+    return 'atariage-atari'
 
 
 def url():
@@ -216,7 +245,7 @@ def url():
     the plugin url name
     :return: string (i.e. 'http://www.lemon64.com')
     """
-    return 'http://www.worldofspectrum.org'
+    return 'http://atariage.com'
 
 
 def systems():
@@ -224,7 +253,7 @@ def systems():
     the related system/s
     :return: string (i.e. 'Commodore 64')
     """
-    return 'Sinclair ZX Spectrum/ZX-81'
+    return 'Atari 2600, 5200, 7800, Lynx, Jaguar'
 
 
 def engine_help():
@@ -232,4 +261,5 @@ def engine_help():
     help on engine specific '--engine_params' and such
     :return: string
     """
-    return 'note: img_index=0 (default) downloads in-game screen, img_index=1 downloads title screen (fallback to in-game if not found)'
+    return """system=name: specifies target system ('2600', '5200', '7800', 'lynx', 'jaguar')
+        note: thumbnails not available"""

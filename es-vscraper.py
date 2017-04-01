@@ -122,6 +122,7 @@ def scrape_title(engine, args):
     :param args dictionary
     :return: 0 on success, -1 on error/skip
     """
+    args.path = os.path.abspath(args.path)
     if not os.path.exists(args.path):
         print('%s not found!' % args.path)
         return -1

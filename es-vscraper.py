@@ -120,7 +120,7 @@ def scrape_title(engine, args):
     scrape a single title
     :param engine an engine module
     :param args dictionary
-    :return: 0 on success, -1 on error/skip
+    :return: 0 on success, -1 on not found on disk, -2 on skip, -3 on not found on server
     """
     args.path = os.path.abspath(args.path)
     if not os.path.exists(args.path):
@@ -128,13 +128,14 @@ def scrape_title(engine, args):
         return -1
 
     if args.to_search is None:
-        # to_search (name to be queried by scraper) is the filename without extension
+        ts = args.path
         if args.strip_start is not None:
-            # strip characters after the given ones
-            l = re.split(('[%s]+' % re.escape(args.strip_start)), args.path)
-            args.path = l[0].strip()
-
-        args.to_search = os.path.splitext(os.path.basename(args.path))[0]
+            # strip all characters after the given ones (i.e. for '(', 'caesar the cat (int).zip' becomes 'caesar the cat')
+            l = re.split(('[%s]+' % re.escape(args.strip_start)), os.path.basename(ts))
+            args.to_search = l[0].strip()
+        else:
+            # to_search (name to be queried by scraper) is the filename without extension
+            args.to_search = os.path.splitext(os.path.basename(ts))[0]
 
     if args.img_path is None:
         # use path/images as images path
@@ -152,14 +153,14 @@ def scrape_title(engine, args):
                 if g.path == os.path.abspath(args.path):
                     # if so, it must be skipped (not overwritten)
                     print('Skipping entry (already present): %s' % g['name'])
-                    return -1
+                    return -2
 
     try:
         print('Downloading data for "%s" (%s)...' % (args.to_search, '-' if args.engine_params is None else args.engine_params))
         game_info = engine.run(args)
     except vscraper_utils.GameNotFoundException as e:
         print('Cannot find "%s", scraper="%s"' % (args.to_search, engine.name()))
-        return -1
+        return -3
 
     except vscraper_utils.MultipleChoicesException as e:
         print('Multiple titles found for "%s":' % args.to_search)
@@ -281,9 +282,11 @@ def scrape_folder(mod, args):
             args.path = game_path
             args.to_search = None
             res = scrape_title(mod,args)
-            if res == 0:
-                # sleep between 1 and 15 seconds (avoid hammering)
-                time.sleep(random.randint(1,int(args.sleep_no_hammer)))
+            if res == 0 or res == -3:
+                # sleep between 1 and sleep_no_hammer (avoid hammering)
+                seconds = random.randint(1,int(args.sleep_no_hammer))
+                print('sleeping %d seconds' % seconds)
+                time.sleep(seconds)
 
         except Exception as e:
             # show error and continue

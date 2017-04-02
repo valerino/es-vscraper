@@ -283,7 +283,7 @@ def scrape_folder(mod, args):
             res = scrape_title(mod,args)
             if res == 0:
                 # sleep between 1 and 15 seconds (avoid hammering)
-                time.sleep(random.randint(1,args.sleep_no_hammer))
+                time.sleep(random.randint(1,int(args.sleep_no_hammer)))
 
         except Exception as e:
             # show error and continue

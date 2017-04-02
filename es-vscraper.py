@@ -285,7 +285,6 @@ def scrape_folder(mod, args):
             if res == 0 or res == -3:
                 # sleep between 1 and sleep_no_hammer (avoid hammering)
                 seconds = random.randint(1,int(args.sleep_no_hammer))
-                print('sleeping %d seconds' % seconds)
                 time.sleep(seconds)
 
         except Exception as e:

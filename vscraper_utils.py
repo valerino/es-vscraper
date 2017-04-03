@@ -17,8 +17,15 @@ OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 """
 
 import io
+from time import sleep
 from PIL import Image
-
+import select
+import sys
+import os
+import time
+import threading
+if os.name == 'nt':
+    import msvcrt
 
 class MultipleChoicesException(Exception):
     """
@@ -43,7 +50,65 @@ class GameNotFoundException(Exception):
     """
     pass
 
-def get_parameter(params, name):
+def __input_with_timeout_win(prompt, timeout):
+    """
+    input with timeout, unix version (internal)
+    """
+    result=''
+    class KeyboardThread(threading.Thread):
+        def run(self):
+            self.timedout = False
+            self.input = ''
+            while True:
+                if msvcrt.kbhit():
+                    chr = msvcrt.getche()
+                    if ord(chr) == 0x0d:
+                        break
+                    self.input += str(chr,'utf-8')
+
+                if len(self.input) == 0 and self.timedout:
+                    break
+
+    print(prompt)
+    it = KeyboardThread()
+    it.start()
+    it.join(timeout)
+    it.timedout = True
+    if len(it.input) > 0:
+        # wait for rest of input
+        it.join()
+        result = it.input
+
+    return result
+
+
+def __input_with_timeout_unix(prompt, timeout):
+    """
+    input with timeout, unix version (internal)
+    """
+    sys.stdout.write(prompt)
+    sys.stdout.flush()
+    ready, _, _ = select.select([sys.stdin], [],[], timeout)
+    if ready:
+        return sys.stdin.readline().rstrip('\n')
+    return ''
+
+
+def input_with_timeout(prompt, timeout = 0):
+    """
+    show prompt with timeout
+    :param prompt: prompt to be shown
+    :param timeout: if not 0, timeout to wait for in seconds
+    :return: the input as string, may be empty if timeout occurred
+    """
+    if timeout == 0:
+        return input(prompt)
+    if os.name == 'nt':
+        return __input_with_timeout_win(prompt, timeout)
+    return __input_with_timeout_unix(prompt, timeout)
+
+
+def get_csv_parameter(params, name):
     """
     get parameter from csv string of name=value
     :param params: name=value[,name=value,...]

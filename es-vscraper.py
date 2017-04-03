@@ -168,12 +168,13 @@ def scrape_title(engine, args):
         for choice in e.choices():
             print('%s: [%s] %s, %s, %s' % (i, choice['system'] if 'system' in choice else '-', choice['name'], choice['publisher'], choice['year'] if 'year' in choice else '?'))
             i += 1
-        if args.unattended:
+
+        # ask using timeout, if any
+        timeout = int(args.unattended_timeout)
+        res = vscraper_utils.input_with_timeout('choose (1-%d): ' % (i - 1), timeout)
+        if (res == ''):
             # use the first entry
             res = '1'
-        else:
-            # ask the user
-            res = input('choose (1-%d): ' % (i - 1))
 
         # reissue with the correct entry
         c = e.choices()[int(res) - 1]
@@ -356,9 +357,9 @@ def main():
     parser.add_argument('--append_auto',
         help='automatically generate n entries starting from the given one (i.e. --append_auto 2 --path=./game1.d64 generates "game (disk 1)" pointing to ./game1.d64 and "game (disk 2)" pointing to ./game2.d64)',
         type=int, default=0)
-    parser.add_argument('--unattended',
-                        help='Automatically choose the first found entry in case of multiple entries found (default False, asks on multiple choices)',
-                        action='store_const', const=True)
+    parser.add_argument('--unattended_timeout',
+                        help='Automatically choose the first found entry after the specified seconds, in case of multiple entries found (default is ask on multiple choices)',
+                        nargs='?', default=0)
     parser.add_argument('--delete', help='delete all the entries whose path matches this regex from the gamelist.xml (needs --gamelist_path, anything else is ignored)', nargs='?')
     parser.add_argument('--debug',
                         help='Print scraping result on the console',

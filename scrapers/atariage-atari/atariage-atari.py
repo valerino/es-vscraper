@@ -209,7 +209,7 @@ def run(args):
 
     # get system
     engines = {'2600', '5200', '7800', 'lynx', 'jaguar'}
-    s = vscraper_utils.get_parameter(args.engine_params, 'system')
+    s = vscraper_utils.get_csv_parameter(args.engine_params, 'system')
     if s not in engines:
         print('supported systems: %s' % engines)
         raise ValueError

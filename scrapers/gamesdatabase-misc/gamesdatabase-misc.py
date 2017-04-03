@@ -300,7 +300,7 @@ def run(args):
         raise ValueError
 
     # get system
-    s = vscraper_utils.get_parameter(args.engine_params, 'system')
+    s = vscraper_utils.get_csv_parameter(args.engine_params, 'system')
 
     # get game id
     params = {'in': 1, 'searchtext': args.to_search, 'searchtype': 1}
@@ -349,6 +349,5 @@ def engine_help():
     help on engine specific '--engine_params' and such
     :return: string
     """
-    return """system=name: specifies target system, substring allowed ("amiga", "spectrum", "coleco", ...)    
+    return """system=name: specifies target system, substring allowed ("amiga", "spectrum", "coleco", ...)
         note: img_index=0 (default) downloads in-game screen, img_index=1 downloads title screen (fallback to in-game if not found)"""
-

@@ -153,9 +153,10 @@ optional arguments:
                         given one (i.e. --append_auto 2 --path=./game1.d64
                         generates "game (disk 1)" pointing to ./game1.d64 and
                         "game (disk 2)" pointing to ./game2.d64)
-  --unattended          Automatically choose the first found entry in case of
-                        multiple entries found (default False, asks on
-                        multiple choices)
+  --unattended_timeout [UNATTENDED_TIMEOUT]
+                        Automatically choose the first found entry after the
+                        specified seconds, in case of multiple entries found
+                        (default is ask on multiple choices)
   --delete [DELETE]     delete all the entries whose path matches this regex
                         from the gamelist.xml (needs --gamelist_path, anything else is ignored))
   --debug               Print scraping result on the console

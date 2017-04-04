@@ -25,7 +25,7 @@ import traceback
 import random
 import time
 import sys
-
+import shutil
 import vscraper_utils
 from lxml import etree, objectify
 
@@ -156,10 +156,22 @@ def scrape_title(engine, args):
                     return -2
 
     try:
-        print('Downloading data for "%s" (%s)...' % (args.to_search, '-' if args.engine_params is None else args.engine_params))
+        print('Downloading data for "%s" (%s, system=%s)...' % (args.to_search, os.path.abspath(args.path), '-' if args.engine_params is None else args.engine_params))
         game_info = engine.run(args)
     except vscraper_utils.GameNotFoundException as e:
         print('Cannot find "%s", scraper="%s"' % (args.to_search, engine.name()))
+        if args.move_no_scraped is not None:
+            # rename/move
+            os.makedirs(os.path.abspath(args.move_no_scraped), exist_ok=True)
+            renamed = os.path.join(os.path.abspath(args.move_no_scraped), os.path.basename(os.path.abspath(args.path)))
+            shutil.move(args.path, renamed)
+            print('Non-scraped file %s moved to: %s' % (args.path, renamed))
+        else:
+            # check for deletion
+            if args.delete_no_scraped == True:
+                os.remove(args.path)
+                print('DELETED non-scraped file: %s' % (args.path))
+
         return -3
 
     except vscraper_utils.MultipleChoicesException as e:
@@ -328,12 +340,70 @@ def delete_entries(args):
     s = etree.tostring(xml, pretty_print=True)
     vscraper_utils.write_to_file(args.gamelist_path, s)
 
+
+def preprocess(args):
+    """
+    preprocess folder to delete unneeded files
+    """
+
+    if args.preprocess_move_not_matching is not None:
+        if args.preprocess_test is not True:
+            # create the move-to path
+            os.makedirs(args.preprocess_move_not_matching, mode=0o777, exist_ok=True)
+
+    # get all files in folder
+    files = os.listdir(args.path)
+    tmp = args.path
+    args.path_is_dir = True
+    count = 0
+    tot = 0
+    for f in files:
+        if os.path.isdir(f):
+            # skip subfolders
+            continue
+
+        if f.lower() == 'gamelist.xml':
+            # skip gamelist
+            continue
+
+        try:
+            # process entry
+            match = re.match(args.preprocess, f, re.I)
+            game_path = os.path.join(tmp, f)
+            tot+=1
+            if match is not None:
+                print('MATCHING, %s' % game_path)
+            else:
+                # not MATCHING
+                if args.preprocess_move_not_matching:
+                    renamed = os.path.join(args.preprocess_move_not_matching, f)
+                    count+=1
+                    if args.preprocess_test is not True:
+                        # rename/move
+                        shutil.move(game_path, renamed)
+                    print('NOT MATCHING, %s, moved to %s' % (game_path, renamed))
+                else:
+                    print('NOT MATCHING, %s, deleting' % (game_path))
+                    count+=1
+                    if args.preprocess_test is not True:
+                        # delete
+                        os.remove(game_path)
+        except Exception as e:
+            # show error and continue
+            traceback.print_exc()
+            continue
+
+    print ('done, moved/deleted %d files (out of %d) in %s !' % (count, tot, args.path))
+
+
 def main():
     parser = argparse.ArgumentParser('Build gamelist.xml for EmulationStation by querying online databases\n')
     parser.add_argument('--list_engines', help="list the available engines (and their options, if any)", action='store_const', const=True)
     parser.add_argument('--engine', help="the engine to use (use --list_engines to check available engines)", nargs='?')
     parser.add_argument('--engine_params', help="custom engine parameters, name=value[,name=value,...], default None", nargs='?')
     parser.add_argument('--path', help='path to the file to be scraped, or to a folder with (correctly named) files to be scraped', nargs='?')
+    parser.add_argument('--move_no_scraped', help='move not scraped files to this path', nargs='?')
+    parser.add_argument('--delete_no_scraped', help='delete non-scraped files, ignored if --move_no_scraped is specified', action='store_const', const=True)
     parser.add_argument('--sleep_no_hammer', help='sleep random seconds (1-n) between each scraped entries when path refers to a folder. Default is 15',
         nargs='?', default=15)
     parser.add_argument('--strip_start', help='strip characters (until end) starting from the given ones, before using \'path\' as search key (i.e. --path "./caesar the cat (eng)"  --strip_start "(" searches for "caesar the cat")',
@@ -361,6 +431,9 @@ def main():
                         help='Automatically choose the first found entry after the specified seconds, in case of multiple entries found (default is ask on multiple choices)',
                         nargs='?', default=0)
     parser.add_argument('--delete', help='delete all the entries whose path matches this regex from the gamelist.xml (needs --gamelist_path, anything else is ignored)', nargs='?')
+    parser.add_argument('--preprocess', help='preprocess folder at "path" and keep only the files matching the given regex (every other parameter is ignored). This cleans the directory for later processing by the scraper.', nargs='?')
+    parser.add_argument('--preprocess_move_not_matching', help='move not matching files from --preprocess to this path instead of deleting', nargs='?')
+    parser.add_argument('--preprocess_test', help='test for preprocessing options, do not delete/move files', action='store_const', const=True)
     parser.add_argument('--debug',
                         help='Print scraping result on the console',
                         action='store_const', const=True)
@@ -385,29 +458,37 @@ def main():
 
         exit(0)
 
-    if args.delete is not None and args.gamelist_path is None:
-        print('--gamelist_path is required in delete mode')
+    if args.preprocess is not None and args.path is None:
+        print('--path is required for --preprocess')
         exit(1)
 
-    if args.delete is None and (args.engine is None or args.path is None):
+    if args.preprocess is None and args.delete is not None and args.gamelist_path is None:
+        print('--gamelist_path is required for --delete')
+        exit(1)
+
+    if args.preprocess is None and args.delete is None and (args.engine is None or args.path is None):
         print('--engine and --path are required!')
         exit(1)
 
     try:
-        if args.delete is not None:
-            # delete entries from xml
-            delete_entries(args)
+        if args.preprocess is not None:
+            # preprocess path
+            preprocess(args)
         else:
-            # get module
-            mod = get_scraper(args.engine)
-
-            if os.path.isdir(args.path):
-                # scrape entire folder
-                scrape_folder(mod,args)
+            if args.delete is not None:
+                # delete entries from xml
+                delete_entries(args)
             else:
-                # scrape single file
-                args.path_is_dir = False
-                scrape_title(mod, args)
+                # get module
+                mod = get_scraper(args.engine)
+
+                if os.path.isdir(args.path):
+                    # scrape entire folder
+                    scrape_folder(mod,args)
+                else:
+                    # scrape single file
+                    args.path_is_dir = False
+                    scrape_title(mod, args)
     except Exception as e:
         traceback.print_exc()
         exit(1)

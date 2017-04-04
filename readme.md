@@ -119,6 +119,8 @@ optional arguments:
                         default None
   --path [PATH]         path to the file to be scraped, or to a folder with
                         (correctly named) files to be scraped
+  --move_no_scraped [MOVE_NO_SCRAPED]
+                        move not scraped files to this path
   --sleep_no_hammer [SLEEP_NO_HAMMER]
                         sleep random seconds (1-n) between each scraped
                         entries when path refers to a folder. Default is 15
@@ -159,6 +161,14 @@ optional arguments:
                         (default is ask on multiple choices)
   --delete [DELETE]     delete all the entries whose path matches this regex
                         from the gamelist.xml (needs --gamelist_path, anything else is ignored))
+  --preprocess [PREPROCESS]
+                        preprocess folder at "path" and keep only the files
+                        matching the given regex (every other parameter is
+                        ignored). This cleans the directory for later
+                        processing by the scraper.
+  --preprocess_move_not_matching [PREPROCESS_MOVE_NOT_MATCHING]
+                        move not matching files from --preprocess to this path instead of deleting
+  --preprocess_test     test for preprocessing options, do not delete/move files
   --debug               Print scraping result on the console
 ~~~~
 
@@ -170,6 +180,18 @@ sample usage
 /opt/es-vscraper/es-vscraper.py --engine lemon-c64 --path "/home/pi/RetroPie/roms/c64/caesar\ the\ cat.prg"
 
 /opt/es-vscraper/es-vscraper.py --engine lemon-c64 --path /home/pi/RetroPie/roms/c64
+~~~~
+
+advanced usage
+--------------
+keep only PAL roms in atari 2600 folder:
+~~~~
+/opt/es-vscraper/es-vscraper.py --preprocess ".+(PAL).+" --preprocess_move_not_matching ./2600-nonPAL
+~~~~
+
+...then scrape the whole folder, trying to get the right name from filename, in fully automated mode (no ask for confirmation), saving the non-scraped roms for later inspection
+~~~~
+/opt/es-vscraper/es-vscraper.py --engine atariage-atari --engine_params system=2600 --strip_start "([" --path /home/pi/RetroPie/roms/atari2600 --move_no_scraped ./not-scraped --unattended_timeout 1 --sleep_no_hammer 3
 ~~~~
 
 currently implemented modules

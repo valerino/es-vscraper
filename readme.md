@@ -102,13 +102,16 @@ usage: Build gamelist.xml for EmulationStation by querying online databases
 
        [-h] [--list_engines] [--engine [ENGINE]]
        [--engine_params [ENGINE_PARAMS]] [--path [PATH]]
+       [--move_no_scraped [MOVE_NO_SCRAPED]] [--delete_no_scraped]
        [--sleep_no_hammer [SLEEP_NO_HAMMER]] [--strip_start [STRIP_START]]
        [--folder_overwrite] [--to_search [TO_SEARCH]]
        [--gamelist_path [GAMELIST_PATH]] [--img_path [IMG_PATH]]
        [--img_index [IMG_INDEX]] [--img_thumbnail] [--append [APPEND]]
-       [--append_auto APPEND_AUTO] [--unattended] [--delete [DELETE]]
-       [--debug]
-
+       [--append_auto APPEND_AUTO] [--unattended_timeout [UNATTENDED_TIMEOUT]]
+       [--delete [DELETE]] [--preprocess [PREPROCESS]]
+       [--preprocess_move_not_matching [PREPROCESS_MOVE_NOT_MATCHING]]
+       [--preprocess_test] [--debug]
+       
 optional arguments:
   -h, --help            show this help message and exit
   --list_engines        list the available engines (and their options, if any)

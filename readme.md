@@ -1,6 +1,6 @@
 what it is
 ----------
-es-vscraper is an extensible scraper to generate gamelist.xml compatible with [EmulationStation/RetroPie](https://retropie.org.uk/),  [RecalBox/RecalBoxOS](https://www.recalbox.com/), and any other project sharing the [EmulationStation Gamelist XML format](https://github.com/Aloshi/EmulationStation/blob/master/GAMELISTS.md).
+es-vscraper is an extensible scraper to generate gamelist.xml and manage games collections, compatible with [EmulationStation/RetroPie](https://retropie.org.uk/),  [RecalBox/RecalBoxOS](https://www.recalbox.com/) and any other project sharing the [EmulationStation Gamelist XML format](https://github.com/Aloshi/EmulationStation/blob/master/GAMELISTS.md).
 
 This is a personal project made just for myself (at the moment), since i don't like the available hash-only-based scrapers.
 
@@ -10,7 +10,7 @@ dependencies
 ~~~~
 sudo apt-get update (needed on retropie/raspi, seems....)
 sudo apt-get install python3 python3-pip libxml2-dev libxslt-dev
-sudo pip3 install requests Image bs4 lxml python-slugify
+sudo pip3 install requests Image bs4 lxml python-slugify fuzzywuzzy 
 (lxml takes some minutes to build on raspi)
 ~~~~
 on OSX, install python3 and any other needed library with brew (preferred)
@@ -101,17 +101,16 @@ pi@retropie:/opt/es-vscraper $ ./es-vscraper.py --help
 usage: Build gamelist.xml for EmulationStation by querying online databases
 
        [-h] [--list_engines] [--engine [ENGINE]]
-       [--engine_params [ENGINE_PARAMS]] [--path [PATH]]
-       [--move_no_scraped [MOVE_NO_SCRAPED]] [--delete_no_scraped]
+       [--engine_params [ENGINE_PARAMS]] [--path [PATH]] [--delete_no_scraped]
        [--sleep_no_hammer [SLEEP_NO_HAMMER]] [--strip_start [STRIP_START]]
        [--folder_overwrite] [--to_search [TO_SEARCH]]
        [--gamelist_path [GAMELIST_PATH]] [--img_path [IMG_PATH]]
        [--img_index [IMG_INDEX]] [--img_thumbnail] [--append [APPEND]]
        [--append_auto APPEND_AUTO] [--unattended_timeout [UNATTENDED_TIMEOUT]]
-       [--delete [DELETE]] [--preprocess [PREPROCESS]]
-       [--preprocess_move_not_matching [PREPROCESS_MOVE_NOT_MATCHING]]
-       [--preprocess_test] [--debug]
-       
+       [--delete_from_gamelist [DELETE_FROM_GAMELIST]]
+       [--preprocess [PREPROCESS]] [--dumpbin [DUMPBIN]]
+       [--preprocess_duplicates] [--preprocess_test] [--debug]
+
 optional arguments:
   -h, --help            show this help message and exit
   --list_engines        list the available engines (and their options, if any)
@@ -122,8 +121,8 @@ optional arguments:
                         default None
   --path [PATH]         path to the file to be scraped, or to a folder with
                         (correctly named) files to be scraped
-  --move_no_scraped [MOVE_NO_SCRAPED]
-                        move not scraped files to this path
+  --delete_no_scraped   delete non-scraped files, ignored if --dumpbin is
+                        specified
   --sleep_no_hammer [SLEEP_NO_HAMMER]
                         sleep random seconds (1-n) between each scraped
                         entries when path refers to a folder. Default is 15
@@ -162,15 +161,20 @@ optional arguments:
                         Automatically choose the first found entry after the
                         specified seconds, in case of multiple entries found
                         (default is ask on multiple choices)
-  --delete [DELETE]     delete all the entries whose path matches this regex
-                        from the gamelist.xml (needs --gamelist_path, anything else is ignored))
+  --delete_from_gamelist [DELETE_FROM_GAMELIST]
+                        delete all the entries whose path matches this regex
+                        from the gamelist.xml (needs --gamelist_path, anything
+                        else is ignored)
   --preprocess [PREPROCESS]
                         preprocess folder at "path" and keep only the files
                         matching the given regex (every other parameter is
                         ignored). This cleans the directory for later
                         processing by the scraper.
-  --preprocess_move_not_matching [PREPROCESS_MOVE_NOT_MATCHING]
-                        move not matching files from --preprocess to this path instead of deleting
+  --dumpbin [DUMPBIN]   
+                        move non-scraped, not matching from --preprocess or 
+                        duplicates from --preprocess_duplicates files to this 
+                        path if specified
+  --preprocess_duplicates check for duplicates, ask for delete/move to dumpbin
   --preprocess_test     test for preprocessing options, do not delete/move files
   --debug               Print scraping result on the console
 ~~~~
@@ -187,15 +191,19 @@ sample usage
 
 advanced usage
 --------------
-keep only PAL roms in atari 2600 folder:
+keep only PAL roms in atari 2600 folder (move non PAL to ./moved folder):
 ~~~~
-/opt/es-vscraper/es-vscraper.py --preprocess ".+(PAL).+" --preprocess_move_not_matching ./2600-nonPAL
+/opt/es-vscraper/es-vscraper.py --path ./atari2600 --preprocess ".+(PAL).+" --dumpbin ./moved
 ~~~~
-
+...removing duplicates (interactive, will ask for confirmations), duplicates will be moved to ./moved folder
+~~~~
+/opt/es-vscraper/es-vscraper --preprocess_duplicates --dumpbin ./moved --path ./atari2600
+~~~~
 ...then scrape the whole folder, trying to get the right name from filename, in fully automated mode (no ask for confirmation), saving the non-scraped roms for later inspection
 ~~~~
-/opt/es-vscraper/es-vscraper.py --engine atariage-atari --engine_params system=2600 --strip_start "([" --path /home/pi/RetroPie/roms/atari2600 --move_no_scraped ./not-scraped --unattended_timeout 1 --sleep_no_hammer 3
+/opt/es-vscraper/es-vscraper.py --engine atariage-atari --engine_params system=2600 --strip_start "([" --path /home/pi/RetroPie/roms/atari2600 --dumpbin ./not-scraped --unattended_timeout 1 --sleep_no_hammer 3
 ~~~~
+
 
 currently implemented modules
 -----------------------------

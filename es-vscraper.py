@@ -301,6 +301,7 @@ def scrape_folder(mod, args):
     """
 
     # get all files in folder
+    args.path = os.path.abspath(args.path)
     files = os.listdir(args.path)
     tmp = args.path
     args.path_is_dir = True
@@ -341,8 +342,7 @@ def delete_entries(args):
         return
 
     # read xml
-    xml = objectify.fromstring(
-        vscraper_utils.read_from_file(args.gamelist_path))
+    xml = objectify.fromstring(vscraper_utils.read_from_file(args.gamelist_path))
     modified = 0
     for game in xml.getchildren():
         for e in game.getchildren():
@@ -470,6 +470,8 @@ def preprocess_duplicates(args):
     """
     preprocess folder to remove duplicates
     """
+    args.path = os.path.abspath(args.path)
+
     if args.dumpbin is not None:
         # create the move-to path
         os.makedirs(args.dumpbin, mode=0o777, exist_ok=True)
@@ -481,7 +483,7 @@ def preprocess_duplicates(args):
     # sort
     init_count = len(files)
     for f in files:
-        if os.path.isdir(f):
+        if os.path.isdir(os.path.join(tmp,f)):
             # skip subfolders
             continue
 
@@ -504,7 +506,8 @@ def preprocess(args):
     """
     preprocess folder to delete unneeded files
     """
-
+    args.path = os.path.abspath(args.path)
+    
     if args.dumpbin is not None:
         if args.preprocess_test is not True:
             # create the move-to path

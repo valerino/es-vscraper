@@ -10,7 +10,7 @@ dependencies
 ~~~~
 sudo apt-get update (needed on retropie/raspi, seems....)
 sudo apt-get install python3 python3-pip libxml2-dev libxslt-dev
-sudo pip3 install requests Image bs4 lxml python-slugify fuzzywuzzy 
+sudo pip3 install requests Image bs4 lxml python-slugify fuzzywuzzy python-Levenshtein
 (lxml takes some minutes to build on raspi)
 ~~~~
 on OSX, install python3 and any other needed library with brew (preferred)

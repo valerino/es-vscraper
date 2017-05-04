@@ -39,6 +39,7 @@ def list_scrapers():
     :return: [ modules]
     """
     cwd = os.getcwd()
+    
     os.chdir(sys.path[0])
     scrapers = []
     files = os.listdir('./%s' % SCRAPERS_FOLDER)
@@ -118,6 +119,23 @@ def add_game_entry(args, root, game_info):
     root.append(game)
 
 
+def scrape_move_delete(args):
+    """
+    move/delete unwanted/not scraped files during scraping
+    """
+    if args.dumpbin is not None:
+        # rename/move
+        os.makedirs(os.path.abspath(args.dumpbin), exist_ok=True)
+        renamed = os.path.join(os.path.abspath(args.dumpbin), os.path.basename(os.path.abspath(args.path)))
+        shutil.move(args.path, renamed)
+        print('Non-scraped file %s moved to: %s' % (args.path, renamed))
+    else:
+        # check for deletion
+        if args.delete_no_scraped == True:
+            os.remove(args.path)
+            print('DELETED non-scraped file: %s' % (args.path))
+
+
 def scrape_title(engine, args):
     """
     scrape a single title
@@ -154,8 +172,7 @@ def scrape_title(engine, args):
     if args.path_is_dir is True and args.folder_overwrite is None:
         # check if the game is already listed in the gamelist_path
         if os.path.exists(args.gamelist_path):
-            xml = objectify.fromstring(
-                vscraper_utils.read_from_file(args.gamelist_path))
+            xml = objectify.fromstring(vscraper_utils.read_from_file(args.gamelist_path))
             for g in xml.findall('game'):
                 if g.path == os.path.abspath(args.path):
                     # if so, it must be skipped (not overwritten)
@@ -163,44 +180,30 @@ def scrape_title(engine, args):
                     return -2
 
     try:
-        print('Downloading data for "%s" (%s, system=%s)...' %
-              (args.to_search, os.path.abspath(args.path), '-'
-               if args.engine_params is None else args.engine_params))
+        print('Downloading data for "%s" (%s, system=%s)...' % (args.to_search, os.path.abspath(args.path), '-' if args.engine_params is None else args.engine_params))
         game_info = engine.run(args)
     except vscraper_utils.GameNotFoundException as e:
-        print('Cannot find "%s", scraper="%s"' % (args.to_search,
-                                                  engine.name()))
-        if args.dumpbin is not None:
-            # rename/move
-            os.makedirs(os.path.abspath(args.dumpbin), exist_ok=True)
-            renamed = os.path.join(
-                os.path.abspath(args.dumpbin),
-                os.path.basename(os.path.abspath(args.path)))
-            shutil.move(args.path, renamed)
-            print('Non-scraped file %s moved to: %s' % (args.path, renamed))
-        else:
-            # check for deletion
-            if args.delete_no_scraped == True:
-                os.remove(args.path)
-                print('DELETED non-scraped file: %s' % (args.path))
-
+        print('Cannot find "%s", scraper="%s"' % (args.to_search, engine.name()))
+        scrape_move_delete(args)
         return -3
 
     except vscraper_utils.MultipleChoicesException as e:
         print('Multiple titles found for "%s":' % args.to_search)
         i = 1
         for choice in e.choices():
-            print('%s: [%s] %s, %s, %s' %
-                  (i, choice['system'] if 'system' in choice else '-',
-                   choice['name'], choice['publisher'], choice['year']
-                   if 'year' in choice else '?'))
+            print('%s: [%s] %s, %s, %s' % (i, choice['system'] if 'system' in choice else '-',
+                   choice['name'], choice['publisher'], choice['year'] if 'year' in choice else '?'))
             i += 1
 
         # ask using timeout, if any
         timeout = int(args.unattended_timeout)
-        res = vscraper_utils.input_with_timeout('choose (1-%d): ' % (i - 1),
-                                                timeout)
-        if (res == ''):
+        res = vscraper_utils.input_with_timeout('choose (1-%d, 0 to delete/move): ' % (i - 1), timeout)
+        if res == '0': 
+            # delete/move
+            scrape_move_delete(args)
+            return -3
+            
+        elif res == '':
             # use the first entry
             res = '1'
 

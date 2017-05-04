@@ -305,7 +305,7 @@ def scrape_folder(mod, args):
     tmp = args.path
     args.path_is_dir = True
     for f in files:
-        if os.path.isdir(f):
+        if os.path.isdir(os.path.join(tmp,f)):
             # skip subfolders
             continue
         if f.lower() == 'gamelist.xml':

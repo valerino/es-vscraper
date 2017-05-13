@@ -28,45 +28,45 @@ how to write a scraper engine
 - each plugin must implement the following functions:
 ~~~~
 def run_direct_url(u, args):
-  """
-  perform query with the given direct url
-  :param u: the game url
-  :param args: arguments from cmdline
-  :return: dictionary { name, publisher, developer, genre, releasedate, desc, png_img_buffer } (each except 'name' may be empty)
-  """
+	"""
+	perform query with the given direct url
+	:param u: the game url
+	:param args: arguments from cmdline
+	:return: dictionary { name, publisher, developer, genre, releasedate, desc, png_img_buffer } (each except 'name' may be empty)
+	"""
 
 def run(args):
-  """
-  perform query with the given game title
-  :param args: arguments from cmdline
-  :throws vscraper_utils.GameNotFoundException when a game is not found
-  :throws vscraper_utils.MultipleChoicesException when multiple choices are found. ex.choices() returns [{ name, publisher, year, url, system}] (each except 'name' may be empty)
-  :return: dictionary { name, publisher, developer, genre, releasedate, desc, png_img_buffer } (each except 'name' may be empty)
-  """
+	"""
+	perform query with the given game title
+	:param args: arguments from cmdline
+	:throws vscraper_utils.GameNotFoundException when a game is not found
+	:throws vscraper_utils.MultipleChoicesException when multiple choices are found. ex.choices() returns [{ name, publisher, year, url, system}] (each except 'name' may be empty)
+	:return: dictionary { name, publisher, developer, genre, releasedate, desc, png_img_buffer } (each except 'name' may be empty)
+	"""
 
 def name():
-  """
-  the plugin name
-  :return: string (i.e. 'lemon64')
-  """
+	"""
+	the plugin name
+	:return: string (i.e. 'lemon64')
+	"""
 
 def url():
-  """
-  the plugin url name
-  :return: string (i.e. 'http://www.lemon64.com')
-  """
+	"""
+	the plugin url name
+	:return: string (i.e. 'http://www.lemon64.com')
+	"""
 
 def systems():
-  """
-  the related system/s (descriptive)
-  :return: string (i.e. 'Commodore 64')
-  """
+	"""
+	the related system/s (descriptive)
+	:return: string (i.e. 'Commodore 64')
+	"""
 
 def engine_help():
-  """
-  help on engine specific '--engine_params' and such
-  :return: string
-  """
+	"""
+	help on engine specific '--engine_params' and such
+	:return: string
+	"""
 ~~~~
 
 . internal implementation is up to the plugin
@@ -98,85 +98,83 @@ usage
 -----
 ~~~~
 pi@retropie:/opt/es-vscraper $ ./es-vscraper.py --help
-usage: Build gamelist.xml for EmulationStation by querying online databases
+usage: Manage games collection and build gamelist.xml by querying online databases
 
-       [-h] [--list_engines] [--engine [ENGINE]]
-       [--engine_params [ENGINE_PARAMS]] [--path [PATH]] [--delete_no_scraped]
-       [--sleep_no_hammer [SLEEP_NO_HAMMER]] [--strip_start [STRIP_START]]
-       [--folder_overwrite] [--to_search [TO_SEARCH]]
-       [--gamelist_path [GAMELIST_PATH]] [--img_path [IMG_PATH]]
-       [--img_index [IMG_INDEX]] [--img_thumbnail] [--append [APPEND]]
-       [--append_auto APPEND_AUTO] [--unattended_timeout [UNATTENDED_TIMEOUT]]
-       [--delete_from_gamelist [DELETE_FROM_GAMELIST]]
-       [--preprocess [PREPROCESS]] [--dumpbin [DUMPBIN]]
-       [--preprocess_duplicates] [--preprocess_test] [--debug]
+			 [-h] [--list_engines] [--engine ENGINE] [--engine_params ENGINE_PARAMS]
+			 [--path PATH] [--to_search NAME] [--delete_no_scraped]
+			 [--sleep SECONDS] [--trunc_at CHARACTERS]
+			 [--gamelist_path GAMELIST_PATH] [--overwrite] [--img_path IMG_PATH]
+			 [--img_index IMG_INDEX] [--img_thumbnail] [--append STRING]
+			 [--append_auto N] [--unattended_timeout SECONDS] [--dumpbin PATH]
+			 [--purge REGEX] [--preprocess REGEX] [--preprocess_duplicates]
+			 [--preprocess_test] [--debug]
 
 optional arguments:
-  -h, --help            show this help message and exit
-  --list_engines        list the available engines (and their options, if any)
-  --engine [ENGINE]     the engine to use (use --list_engines to check
-                        available engines)
-  --engine_params [ENGINE_PARAMS]
-                        custom engine parameters, name=value[,name=value,...],
-                        default None
-  --path [PATH]         path to the file to be scraped, or to a folder with
-                        (correctly named) files to be scraped
-  --delete_no_scraped   delete non-scraped files, ignored if --dumpbin is
-                        specified
-  --sleep_no_hammer [SLEEP_NO_HAMMER]
-                        sleep random seconds (1-n) between each scraped
-                        entries when path refers to a folder. Default is 15
-  --strip_start [STRIP_START]
-                        strip characters (until end) starting from the given
-                        ones, before using 'path' as search key (i.e. --path
-                        "./caesar the cat (eng)" --strip_start "(" searches
-                        for "caesar the cat")
-  --folder_overwrite    if path refers to a folder, existing entries in
-                        gamelist.xml are overwritten. Default is to skip
-                        existing entries
-  --to_search [TO_SEARCH]
-                        the game to search for (full or sub-string), case
-                        insensitive, enclosed in "" if containing spaces.
-                        Default is the filename part of path without
-                        extension. Ignored if path refers to a folder
-  --gamelist_path [GAMELIST_PATH]
-                        path to gamelist.xml (default path/gamelist.xml, will
-                        be created if not found or appended to)
-  --img_path [IMG_PATH]
-                        path to the folder where to store images (default
-                        path/images)
-  --img_index [IMG_INDEX]
-                        download image at 0-based index among available images
-                        (default 0=first found, -1 tries to download boxart if
-                        found or fallbacks to first image found)
-  --img_thumbnail       download image thumbnail, if possible
-  --append [APPEND]     append this string (enclosed in "" if containing
-                        spaces) to the game name in the gamelist.xml file
-  --append_auto APPEND_AUTO
-                        automatically generate n entries starting from the
-                        given one (i.e. --append_auto 2 --path=./game1.d64
-                        generates "game (disk 1)" pointing to ./game1.d64 and
-                        "game (disk 2)" pointing to ./game2.d64)
-  --unattended_timeout [UNATTENDED_TIMEOUT]
-                        Automatically choose the first found entry after the
-                        specified seconds, in case of multiple entries found
-                        (default is ask on multiple choices)
-  --delete_from_gamelist [DELETE_FROM_GAMELIST]
-                        delete all the entries whose path matches this regex
-                        from the gamelist.xml (needs --gamelist_path, anything
-                        else is ignored)
-  --preprocess [PREPROCESS]
-                        preprocess folder at "path" and keep only the files
-                        matching the given regex (every other parameter is
-                        ignored). This cleans the directory for later
-                        processing by the scraper.
-  --dumpbin [DUMPBIN]   
-                        move non-scraped, not matching from --preprocess or 
-                        duplicates from --preprocess_duplicates files to this 
-                        path if specified
-  --preprocess_duplicates check for duplicates, ask for delete/move to dumpbin
-  --preprocess_test     test for preprocessing options, do not delete/move files
-  --debug               Print scraping result on the console
+	-h, --help            show this help message and exit
+	--list_engines        list the available engines (and their options, if any)
+	--engine ENGINE       the engine to use (use '--list_engines' to check
+												available engines)
+	--engine_params ENGINE_PARAMS
+												custom engine parameters, name=value[,name=value,...],
+												default None
+	--path PATH           path to the file to be scraped (needs to specify '--
+												to_search'), or to a folder with (correctly named)
+												files to be scraped
+	--to_search NAME      name of the game to search for enclosed in '' if
+												containing spaces, the more accurate the better.
+												Default is the filename at '--path' without extension.
+												Ignored if '--path' refers to a folder
+	--delete_no_scraped   delete non-scraped files, ignored if '--dumpbin' is
+												specified
+	--sleep SECONDS       sleep random seconds (1..SECONDS) between each scraped
+												entries when path refers to a folder. Default is 15
+	--trunc_at CHARACTERS
+												before using '--path' as search key, truncate at the
+												first occurrence of any of the given characters (i.e.
+												--path './caesar the cat, (demo) (eng).zip' --trunc_at
+												'(,' searches for 'caesar the cat')
+	--gamelist_path GAMELIST_PATH
+												path to gamelist.xml (default '<path>/gamelist.xml',
+												will be created if not found or appended to)
+	--overwrite           existing entries in gamelist.xml will be overwritten.
+												Default is to skip existing entries
+	--img_path IMG_PATH   path to the folder where to store images (default
+												'<path>/images)'
+	--img_index IMG_INDEX
+												download image at 0-based index among available images
+												(default 0=first found, -1 tries to download boxart if
+												found or fallbacks to first image found)
+	--img_thumbnail       download image thumbnail (support depends on the
+												scraper engine)
+	--append STRING       append this string (enclosed in '' if containing
+												spaces) to the game name in the gamelist.xml file.
+												Only valid if '--path' do not refer to a folder
+	--append_auto N       automatically generate n entries starting from the
+												given one (i.e. --append_auto 2 --path=./game1.d64
+												generates 'game (disk 1)' pointing to ./game1.d64 and
+												'game (disk 2)' pointing to ./game2.d64). Only valid
+												if '--path' do not refer to a folder
+	--unattended_timeout SECONDS
+												automatically choose the first found entry after the
+												specified seconds, in case of multiple entries found
+												(default is to ask on multiple choices)
+	--dumpbin PATH        move non-scraped, not matching from '--preprocess' or
+												duplicates from '--preprocess_duplicates' files to
+												this path if specified
+	--purge REGEX         delete all the entries whose path matches the given
+												regex from the gamelist.xml (needs '--gamelist_path',
+												anything else is ignored). This also deletes the
+												affected game files!
+	--preprocess REGEX    preprocess folder at '--path' and keep only the files
+												matching the given regex (every other parameter is
+												ignored). This cleans the directory for later
+												processing by the scraper
+	--preprocess_duplicates
+												check for duplicates (and ask for deletion or moving
+												to '--dumpbin' if specified)
+	--preprocess_test     test for preprocessing options, do not delete/move
+												files
+	--debug               Print scraping result on the console
 ~~~~
 
 sample usage
@@ -193,7 +191,7 @@ advanced usage
 --------------
 keep only PAL roms in atari 2600 folder (move non PAL to ./moved folder):
 ~~~~
-/opt/es-vscraper/es-vscraper.py --path ./atari2600 --preprocess ".+(PAL).+" --dumpbin ./moved
+/opt/es-vscraper/es-vscraper.py --path ./atari2600 --preprocess '.+(PAL).+' --dumpbin ./moved
 ~~~~
 ...removing duplicates (interactive, will ask for confirmations), duplicates will be moved to ./moved folder
 ~~~~
@@ -201,28 +199,28 @@ keep only PAL roms in atari 2600 folder (move non PAL to ./moved folder):
 ~~~~
 ...then scrape the whole folder, trying to get the right name from filename, in fully automated mode (no ask for confirmation), saving the non-scraped roms for later inspection
 ~~~~
-/opt/es-vscraper/es-vscraper.py --engine atariage-atari --engine_params system=2600 --strip_start "([" --path /home/pi/RetroPie/roms/atari2600 --dumpbin ./not-scraped --unattended_timeout 1 --sleep_no_hammer 3
+/opt/es-vscraper/es-vscraper.py --engine atariage-atari --engine_params system=2600 --trunc_at '([' --path /home/pi/RetroPie/roms/atari2600 --dumpbin ./not-scraped --unattended_timeout 1 --sleep 3
 ~~~~
 
 
 currently implemented modules
 -----------------------------
 - Commodore Amiga
-  - Lemon (http://www.lemonamiga.com)
+	- Lemon (http://www.lemonamiga.com)
 
 - Commodore 64
-  - Lemon (http://www.lemon64.com)
+	- Lemon (http://www.lemon64.com)
 
 - Sinclair (ZX Spectrum, ZX81)
-  - World of Spectrum (http://www.worldofspectrum.org)
+	- World of Spectrum (http://www.worldofspectrum.org)
 
 - Multi
-  - Games Database (http://www.gamesdatabase.org)
-    - supported systems: http://www.gamesdatabase.org/systems
+	- Games Database (http://www.gamesdatabase.org)
+		- supported systems: http://www.gamesdatabase.org/systems
 
 - Multi (Atari)
-  - AtariAge (http://atariage.com)
-    - supported systems: 2600, 5200, 7800, lynx, jaguar
+	- AtariAge (http://atariage.com)
+		- supported systems: 2600, 5200, 7800, lynx, jaguar
 
 todo
 ----

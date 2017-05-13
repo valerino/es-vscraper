@@ -39,7 +39,7 @@ def list_scrapers():
     :return: [ modules]
     """
     cwd = os.getcwd()
-    
+
     os.chdir(sys.path[0])
     scrapers = []
     files = os.listdir('./%s' % SCRAPERS_FOLDER)
@@ -126,7 +126,8 @@ def scrape_move_delete(args):
     if args.dumpbin is not None:
         # rename/move
         os.makedirs(os.path.abspath(args.dumpbin), exist_ok=True)
-        renamed = os.path.join(os.path.abspath(args.dumpbin), os.path.basename(os.path.abspath(args.path)))
+        renamed = os.path.join(os.path.abspath(args.dumpbin),
+                               os.path.basename(os.path.abspath(args.path)))
         shutil.move(args.path, renamed)
         print('Non-scraped file %s moved to: %s' % (args.path, renamed))
     else:
@@ -150,11 +151,9 @@ def scrape_title(engine, args):
 
     if args.to_search is None:
         ts = args.path
-        if args.strip_start is not None:
-            # strip all characters after the given ones (i.e. for '(', 'caesar the cat
-            # (int).zip' becomes 'caesar the cat')
-            l = re.split(('[%s]+' % re.escape(args.strip_start)),
-                         os.path.basename(ts))
+        if args.trunc_at is not None:
+            # truncate at the first occurrence of the given character/s
+            l = re.match(('(.[^%s]+)' % re.escape(args.trunc_at)), os.path.basename(ts))
             args.to_search = l[0].strip()
         else:
             # to_search (name to be queried by scraper) is the filename without extension
@@ -169,18 +168,18 @@ def scrape_title(engine, args):
         args.gamelist_path = os.path.join(
             os.path.dirname(args.path), 'gamelist.xml')
 
-    if args.path_is_dir is True and args.folder_overwrite is None:
-        # check if the game is already listed in the gamelist_path
-        if os.path.exists(args.gamelist_path):
-            xml = objectify.fromstring(vscraper_utils.read_from_file(args.gamelist_path))
-            for g in xml.findall('game'):
-                if g.path == os.path.abspath(args.path):
-                    # if so, it must be skipped (not overwritten)
-                    print('Skipping entry (already present): %s' % g['name'])
-                    return -2
+    # check if the game is already listed in the gamelist_path
+    if os.path.exists(args.gamelist_path):
+        xml = objectify.fromstring(vscraper_utils.read_from_file(args.gamelist_path))
+        for g in xml.findall('game'):
+            if g.path == os.path.abspath(args.path) and args.overwrite is None:
+                # if so, it must be skipped (not overwritten)
+                print('Skipping entry (already present): %s, %s' % (g['name'], g.path))
+                return -2
 
     try:
-        print('Downloading data for "%s" (%s, system=%s)...' % (args.to_search, os.path.abspath(args.path), '-' if args.engine_params is None else args.engine_params))
+        print('Downloading data for "%s" (%s, system=%s)...' % (args.to_search, os.path.abspath(
+            args.path), '-' if args.engine_params is None else args.engine_params))
         game_info = engine.run(args)
     except vscraper_utils.GameNotFoundException as e:
         print('Cannot find "%s", scraper="%s"' % (args.to_search, engine.name()))
@@ -192,17 +191,18 @@ def scrape_title(engine, args):
         i = 1
         for choice in e.choices():
             print('%s: [%s] %s, %s, %s' % (i, choice['system'] if 'system' in choice else '-',
-                   choice['name'], choice['publisher'], choice['year'] if 'year' in choice else '?'))
+                                           choice['name'], choice['publisher'], choice['year'] if 'year' in choice else '?'))
             i += 1
 
         # ask using timeout, if any
         timeout = int(args.unattended_timeout)
-        res = vscraper_utils.input_with_timeout('choose (1-%d, 0 to delete/move): ' % (i - 1), timeout)
-        if res == '0': 
+        res = vscraper_utils.input_with_timeout(
+            'choose (1-%d, 0 to delete/move): ' % (i - 1), timeout)
+        if res == '0':
             # delete/move
             scrape_move_delete(args)
             return -3
-            
+
         elif res == '':
             # use the first entry
             res = '1'
@@ -214,6 +214,11 @@ def scrape_title(engine, args):
         game_info = engine.run_direct_url(c['url'], args)
 
     # check for append
+    if args.path_is_dir is True:
+        # append commands only valid in single entry mode
+        args.append = None
+        args.append_auto = 0
+
     if args.append is not None:
         # append this string to name
         game_info['name'] += (' ' + args.append)
@@ -306,7 +311,7 @@ def scrape_folder(mod, args):
     tmp = args.path
     args.path_is_dir = True
     for f in files:
-        if os.path.isdir(os.path.join(tmp,f)):
+        if os.path.isdir(os.path.join(tmp, f)):
             # skip subfolders
             continue
         if f.lower() == 'gamelist.xml':
@@ -320,8 +325,8 @@ def scrape_folder(mod, args):
             args.to_search = None
             res = scrape_title(mod, args)
             if res == 0 or res == -3:
-                # sleep between 1 and sleep_no_hammer (avoid hammering)
-                seconds = random.randint(1, int(args.sleep_no_hammer))
+                # sleep between 1 and sleep (avoid hammering)
+                seconds = random.randint(1, int(args.sleep))
                 time.sleep(seconds)
 
         except Exception as e:
@@ -347,8 +352,7 @@ def delete_entries(args):
     for game in xml.getchildren():
         for e in game.getchildren():
             if e.tag == 'path':
-                match = re.match(args.delete_from_gamelist, e.text,
-                                 re.M | re.I)
+                match = re.match(args.purge, e.text, re.M | re.I)
                 if match:
                     print('removing: %s (%s)' % (e.text, game.getchildren()[0]))
                     xml.remove(game)
@@ -371,25 +375,27 @@ def delete_entries(args):
     s = etree.tostring(xml, pretty_print=True)
     vscraper_utils.write_to_file(args.gamelist_path, s)
 
-def preprocess_duplicates_internal_move_delete_file(args,entry):
+
+def preprocess_duplicates_internal_move_delete_file(args, entry):
     """
     move or delete the file during duplicates preprocessing
     """
     if args.dumpbin is not None:
         # move
-        moved_path=os.path.join(args.dumpbin, entry)
-        src_path=os.path.join(args.path,entry)
+        moved_path = os.path.join(args.dumpbin, entry)
+        src_path = os.path.join(args.path, entry)
         print('MOVING DUPLICATE: %s to %s\n' % (src_path, moved_path))
         if not args.preprocess_test:
             # actually move the file there
-            shutil.move(src_path,moved_path)
+            shutil.move(src_path, moved_path)
     else:
         # delete
         print('DELETING DUPLICATE: %s\n' % src_path)
         if not args.preprocess_test:
             # actually delete the file
             os.unlink(src_path)
- 
+
+
 def preprocess_duplicates_internal(args, entry, files):
     """
     remove duplicates entries and return the purged list
@@ -427,11 +433,12 @@ def preprocess_duplicates_internal(args, entry, files):
 
     # ask using timeout, if any
     timeout = int(args.unattended_timeout)
-    res = vscraper_utils.input_with_timeout('\nA to keep all, 0 to delete all, or choose (1-%d) to delete (csv i.e. 1,2,3 accepted): ' % (i - 1), timeout)
+    res = vscraper_utils.input_with_timeout(
+        '\nA to keep all, 0 to delete all, or choose (1-%d) to delete (csv i.e. 1,2,3 accepted): ' % (i - 1), timeout)
     if (res == ''):
         # keep all
         res = 'A'
-    
+
     if ',' in res:
         # more than one specified
         splitted = res.split(',')
@@ -442,7 +449,7 @@ def preprocess_duplicates_internal(args, entry, files):
             # remove from list
             files.remove(to_delete)
             # move or delete
-            preprocess_duplicates_internal_move_delete_file(args,to_delete)
+            preprocess_duplicates_internal_move_delete_file(args, to_delete)
     elif res.lower() == 'a':
         # return all
         return files
@@ -453,14 +460,14 @@ def preprocess_duplicates_internal(args, entry, files):
             # remove from list
             files.remove(s)
             # move or delete
-            preprocess_duplicates_internal_move_delete_file(args,s)
+            preprocess_duplicates_internal_move_delete_file(args, s)
     else:
         # only one specified, get entry
         to_delete = l[int(res) - 1]
         # remove from list
         files.remove(to_delete)
         # move or delete
-        preprocess_duplicates_internal_move_delete_file(args,to_delete)
+        preprocess_duplicates_internal_move_delete_file(args, to_delete)
 
     # done
     return files
@@ -483,7 +490,7 @@ def preprocess_duplicates(args):
     # sort
     init_count = len(files)
     for f in files:
-        if os.path.isdir(os.path.join(tmp,f)):
+        if os.path.isdir(os.path.join(tmp, f)):
             # skip subfolders
             continue
 
@@ -499,7 +506,8 @@ def preprocess_duplicates(args):
             traceback.print_exc()
             continue
 
-    print('done, processed %d files, cleaned up to %d in %s !' % (init_count, len(files), args.path))
+    print('done, processed %d files, cleaned up to %d in %s !' %
+          (init_count, len(files), args.path))
 
 
 def preprocess(args):
@@ -507,7 +515,7 @@ def preprocess(args):
     preprocess folder to delete unneeded files
     """
     args.path = os.path.abspath(args.path)
-    
+
     if args.dumpbin is not None:
         if args.preprocess_test is not True:
             # create the move-to path
@@ -562,7 +570,7 @@ def preprocess(args):
 
 def main():
     parser = argparse.ArgumentParser(
-        'Manage games collection and build gamelist.xml for EmulationStation by querying online databases\n'
+        'Manage games collection and build gamelist.xml by querying online databases\n'
     )
     parser.add_argument(
         '--list_engines',
@@ -571,103 +579,98 @@ def main():
         const=True)
     parser.add_argument(
         '--engine',
-        help=
-        "the engine to use (use --list_engines to check available engines)",
-        nargs='?')
+        help="the engine to use (use \'--list_engines\' to check available engines)",
+        nargs=1)
     parser.add_argument(
         '--engine_params',
-        help=
-        "custom engine parameters, name=value[,name=value,...], default None",
-        nargs='?')
+        help="custom engine parameters, name=value[,name=value,...], default None",
+        default=None,
+        nargs=1)
     parser.add_argument(
         '--path',
-        help=
-        'path to the file to be scraped, or to a folder with (correctly named) files to be scraped',
-        nargs='?')
-    parser.add_argument(
-        '--delete_no_scraped',
-        help=
-        'delete non-scraped files, ignored if --dumpbin is specified',
-        action='store_const',
-        const=True)
-    parser.add_argument(
-        '--sleep_no_hammer',
-        help=
-        'sleep random seconds (1-n) between each scraped entries when path refers to a folder. Default is 15',
-        nargs='?',
-        default=15)
-    parser.add_argument(
-        '--strip_start',
-        help=
-        'strip characters (until end) starting from the given ones, before using \'path\' as search key (i.e. --path "./caesar the cat (eng)"  --strip_start "(" searches for "caesar the cat")',
-        nargs='?')
-    parser.add_argument(
-        '--folder_overwrite',
-        help=
-        'if path refers to a folder, existing entries in gamelist.xml are overwritten. Default is to skip existing entries',
-        action='store_const',
-        const=True)
+        help='path to the file to be scraped (needs to specify \'--to_search\'), or to a folder with (correctly named) files to be scraped',
+        nargs=1)
     parser.add_argument(
         '--to_search',
-        help=
-        'the game to search for (full or sub-string), case insensitive, enclosed in "" if containing spaces. Default is the filename part of path without extension. Ignored if path refers to a folder',
-        nargs='?')
+        help='name of the game to search for enclosed in \'\' if containing spaces, the more accurate the better. Default is the filename at \'--path\' without extension. Ignored if \'--path\' refers to a folder',
+        nargs=1,
+        metavar='NAME',
+        default=None)
+    parser.add_argument(
+        '--delete_no_scraped',
+        help='delete non-scraped files, ignored if \'--dumpbin\' is specified',
+        action='store_const',
+        const=True)
+    parser.add_argument(
+        '--sleep',
+        help='sleep random seconds (1..SECONDS) between each scraped entries when path refers to a folder. Default is 15',
+        metavar='SECONDS',
+        nargs=1,
+        default=15)
+    parser.add_argument(
+        '--trunc_at',
+        help='before using \'--path\' as search key, truncate at the first occurrence of any of the given characters (i.e. --path \'./caesar the cat, (demo) (eng).zip\' --trunc_at \'(,\' searches for \'caesar the cat\')',
+        metavar='CHARACTERS',
+        nargs=1)
     parser.add_argument(
         '--gamelist_path',
-        help=
-        'path to gamelist.xml (default path/gamelist.xml, will be created if not found or appended to)',
-        nargs='?')
+        help='path to gamelist.xml (default \'<path>/gamelist.xml\', will be created if not found or appended to)',
+        nargs=1)
+    parser.add_argument(
+        '--overwrite',
+        help='existing entries in gamelist.xml will be overwritten. Default is to skip existing entries',
+        action='store_const',
+        const=True)
     parser.add_argument(
         '--img_path',
-        help='path to the folder where to store images (default path/images)',
-        nargs='?')
+        help='path to the folder where to store images (default \'<path>/images)\'',
+        nargs=1)
     parser.add_argument(
         '--img_index',
-        help=
-        'download image at 0-based index among available images (default 0=first found, -1 tries to download boxart if found or fallbacks to first image found)',
-        nargs="?",
+        help='download image at 0-based index among available images (default 0=first found, -1 tries to download boxart if found or fallbacks to first image found)',
+        nargs=1,
         type=int,
         default=0)
     parser.add_argument(
         '--img_thumbnail',
-        help='download image thumbnail, if possible',
+        help='download image thumbnail (support depends on the scraper engine)',
         action='store_const',
         const=True)
     parser.add_argument(
         '--append',
-        help=
-        'append this string (enclosed in "" if containing spaces) to the game name in the gamelist.xml file',
-        nargs='?')
+        help='append this string (enclosed in \'\' if containing spaces) to the game name in the gamelist.xml file. Only valid if \'--path\' do not refer to a folder',
+        metavar='STRING',
+        nargs=1)
     parser.add_argument(
         '--append_auto',
-        help=
-        'automatically generate n entries starting from the given one (i.e. --append_auto 2 --path=./game1.d64 generates "game (disk 1)" pointing to ./game1.d64 and "game (disk 2)" pointing to ./game2.d64)',
+        help='automatically generate n entries starting from the given one (i.e. --append_auto 2 --path=./game1.d64 generates \'game (disk 1)\' pointing to ./game1.d64 and \'game (disk 2)\' pointing to ./game2.d64). Only valid if \'--path\' do not refer to a folder',
+        metavar='N',
         type=int,
         default=0)
     parser.add_argument(
         '--unattended_timeout',
-        help=
-        'Automatically choose the first found entry after the specified seconds, in case of multiple entries found (default is ask on multiple choices)',
-        nargs='?',
+        help='automatically choose the first found entry after the specified seconds, in case of multiple entries found (default is to ask on multiple choices)',
+        nargs=1,
+        metavar='SECONDS',
         default=0)
     parser.add_argument(
-        '--delete_from_gamelist',
-        help=
-        'delete all the entries whose path matches this regex from the gamelist.xml (needs --gamelist_path, anything else is ignored)',
-        nargs='?')
+        '--dumpbin',
+        help='move non-scraped, not matching from \'--preprocess\' or duplicates from \'--preprocess_duplicates\' files to this path if specified',
+        metavar='PATH',
+        nargs=1)
+    parser.add_argument(
+        '--purge',
+        help='delete all the entries whose path matches the given regex from the gamelist.xml (needs \'--gamelist_path\', anything else is ignored). This also deletes the affected game files!',
+        metavar='REGEX',
+        nargs=1)
     parser.add_argument(
         '--preprocess',
-        help=
-        'preprocess folder at "path" and keep only the files matching the given regex (every other parameter is ignored). This cleans the directory for later processing by the scraper.',
-        nargs='?')
-    parser.add_argument(
-        '--dumpbin',
-        help=
-        'move non-scraped, not matching from --preprocess or duplicates from --preprocess_duplicates files to this path if specified',
-        nargs='?')
+        help='preprocess folder at \'--path\' and keep only the files matching the given regex (every other parameter is ignored). This cleans the directory for later processing by the scraper',
+        metavar='REGEX',
+        nargs=1)
     parser.add_argument(
         '--preprocess_duplicates',
-        help='check for duplicates, ask for delete/move to dumpbin',
+        help='check for duplicates (and ask for deletion or moving to \'--dumpbin\' if specified)',
         action='store_const',
         const=True)
     parser.add_argument(
@@ -715,11 +718,11 @@ def main():
             '--preprocess and --preprocess_duplicates are mutually exclusive'
         )
         exit(1)
-    if args.preprocess is None and args.delete_from_gamelist is not None and args.gamelist_path is None:
-        print('--gamelist_path is required for --delete_from_gamelist')
+    if args.preprocess is None and args.purge is not None and args.gamelist_path is None:
+        print('--gamelist_path is required for --purge')
         exit(1)
 
-    if args.preprocess is None and args.preprocess_duplicates is None and args.delete_from_gamelist is None and (
+    if args.preprocess is None and args.preprocess_duplicates is None and args.purge is None and (
             args.engine is None or args.path is None):
         print('--engine and --path are required, use --help for options')
         exit(1)
@@ -729,7 +732,7 @@ def main():
         elif args.preprocess is not None:
             # preprocess path
             preprocess(args)
-        elif args.delete_from_gamelist is not None:
+        elif args.purge is not None:
             # delete entries from xml
             delete_entries(args)
         else:

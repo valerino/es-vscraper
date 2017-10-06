@@ -199,13 +199,18 @@ def read_from_file(path):
         buffer = f.read()
     return buffer
 
-def download_file(url, path):
+def download_file(url, path, no_overwrite):
     """
     download file from http/s url
     :param url: the complete url i.e. http://path/to/file.zip
     :param path: the destination path
-    :return: 
+    :param no_overwrite: if true, just exits if the file already exists
+    :return: -1 if path exists
     """
+    if no_overwrite == True:
+        if os.path.exists(path):
+            return -1
+
     try:
         os.remove(path)
     except Exception as e:

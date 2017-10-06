@@ -147,11 +147,11 @@ def scrape_title(engine, args):
     """
     args.path = os.path.abspath(args.path)
     if not os.path.exists(args.path):
-        if not args.url:
+        if not args.download_url:
             print('%s not found!' % args.path)
             return -1
 
-    if args.url:
+    if args.download_url:
         if args.name_from_url is True:
             # ensure path is a dir
             if not os.path.isdir(args.path):
@@ -159,7 +159,7 @@ def scrape_title(engine, args):
                 return -1
 
             # derive name from url and create path
-            parsed = urlparse(args.url)
+            parsed = urlparse(args.download_url)
             filename = os.path.basename(parsed.path)
             args.path = os.path.join(args.path, filename)
         else:
@@ -168,12 +168,15 @@ def scrape_title(engine, args):
                 print('ERROR, --path must point to a file!')
                 return -1
         
-        # try to download from url (will overwrite)
-        print('DOWNLOADING %s to %s' % (args.url, args.path))
+        # try to download from url
+        print('DOWNLOADING %s to %s' % (args.download_url, args.path))
         try:
-            vscraper_utils.download_file(args.url, args.path)
+            dwn_res = vscraper_utils.download_file(args.download_url, args.path, args.download_no_overwrite)
+            if dwn_res == -1:
+                print('ALREADY EXISTS: %s (no overwrite)' % (args.path))
+
         except Exception as e:
-            print('ERROR DOWNLOADING %s to %s' % (args.url, args.path))
+            print('ERROR DOWNLOADING %s to %s' % (args.download_url, args.path))
             return -1
         
     if args.to_search is None:
@@ -614,12 +617,17 @@ def main():
         default=None,
         nargs='?')
     parser.add_argument(
-        '--url',
-        help='url to download file at \'--path\', which will be overwritten if existent',
+        '--download_url',
+        help='url to download the file at \'--path\', which will be overwritten if existent',
         nargs='?')
     parser.add_argument(
+        '--download_no_overwrite',
+        help='if specified, \'--download_url\' do not overwrites',
+        action='store_const',
+        const=True)
+    parser.add_argument(
         '--name_from_url',
-        help='if specified, \'--path\' is used as destination folder and the name is derived from \'--url\'',
+        help='if specified, \'--path\' must point to a destination folder and the filename is derived from \'--download_url\'',
         action='store_const',
         const=True)
     parser.add_argument(
@@ -628,18 +636,18 @@ def main():
         nargs='?')
     parser.add_argument(
         '--to_search',
-        help='name of the game to search for enclosed in \'\' if containing spaces, the more accurate the better. Default is the filename at \'--path\' or the one derived from \'--url\', stripped of extension. Ignored if \'--path\' refers to a folder and \'--url\' is not specified',
+        help='name of the game to search for enclosed in \'\' if containing spaces, the more accurate the better. Default is the filename at \'--path\' or the one derived from \'--url\', stripped of extension. Ignored if \'--path\' refers to a folder',
         nargs='?',
         metavar='NAME',
         default=None)
     parser.add_argument(
         '--delete_no_scraped',
-        help='delete non-scraped files, ignored if \'--dumpbin\' is specified',
+        help='delete non-scraped files, ignored if \'--dumpbin\' is specified. Ignored if \'--path\' refers to a file',
         action='store_const',
         const=True)
     parser.add_argument(
         '--sleep',
-        help='sleep random seconds (1..SECONDS) between each scraped entries when path refers to a folder. Default is 15',
+        help='sleep random seconds (1..SECONDS) between each scraped entries when path refers to a folder. Default is 15. Ignored if \'--path\' refers to a file',
         metavar='SECONDS',
         nargs='?',
         default=15)
@@ -774,7 +782,7 @@ def main():
         else:
             # get module
             mod = get_scraper(args.engine)
-            if os.path.isdir(args.path) and args.url is None:
+            if os.path.isdir(args.path) and args.download_url is None:
                 # scrape entire folder
                 scrape_folder(mod, args)
             else:

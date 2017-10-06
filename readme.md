@@ -100,81 +100,94 @@ usage
 pi@retropie:/opt/es-vscraper $ ./es-vscraper.py --help
 usage: Manage games collection and build gamelist.xml by querying online databases
 
-			 [-h] [--list_engines] [--engine ENGINE] [--engine_params ENGINE_PARAMS]
-			 [--path PATH] [--to_search NAME] [--delete_no_scraped]
-			 [--sleep SECONDS] [--trunc_at CHARACTERS]
-			 [--gamelist_path GAMELIST_PATH] [--overwrite] [--img_path IMG_PATH]
-			 [--img_index IMG_INDEX] [--img_thumbnail] [--append STRING]
-			 [--append_auto N] [--unattended_timeout SECONDS] [--dumpbin PATH]
-			 [--purge REGEX] [--preprocess REGEX] [--preprocess_duplicates]
-			 [--preprocess_test] [--debug]
+       [-h] [--list_engines] [--engine [ENGINE]]
+       [--engine_params [ENGINE_PARAMS]] [--download_url [DOWNLOAD_URL]]
+       [--download_no_overwrite] [--name_from_url] [--path [PATH]]
+       [--to_search [NAME]] [--delete_no_scraped] [--sleep [SECONDS]]
+       [--trunc_at [CHARACTERS]] [--gamelist_path [GAMELIST_PATH]]
+       [--overwrite] [--img_path [IMG_PATH]] [--img_index [IMG_INDEX]]
+       [--img_thumbnail] [--append [STRING]] [--append_auto N]
+       [--unattended_timeout [SECONDS]] [--dumpbin [PATH]] [--purge [REGEX]]
+       [--preprocess [REGEX]] [--preprocess_duplicates] [--preprocess_test]
+       [--debug]
 
 optional arguments:
-	-h, --help            show this help message and exit
-	--list_engines        list the available engines (and their options, if any)
-	--engine ENGINE       the engine to use (use '--list_engines' to check
-												available engines)
-	--engine_params ENGINE_PARAMS
-												custom engine parameters, name=value[,name=value,...],
-												default None
-	--path PATH           path to the file to be scraped (needs to specify '--
-												to_search'), or to a folder with (correctly named)
-												files to be scraped
-	--to_search NAME      name of the game to search for enclosed in '' if
-												containing spaces, the more accurate the better.
-												Default is the filename at '--path' without extension.
-												Ignored if '--path' refers to a folder
-	--delete_no_scraped   delete non-scraped files, ignored if '--dumpbin' is
-												specified
-	--sleep SECONDS       sleep random seconds (1..SECONDS) between each scraped
-												entries when path refers to a folder. Default is 15
-	--trunc_at CHARACTERS
-												before using '--path' as search key, truncate at the
-												first occurrence of any of the given characters (i.e.
-												--path './caesar the cat, (demo) (eng).zip' --trunc_at
-												'(,' searches for 'caesar the cat')
-	--gamelist_path GAMELIST_PATH
-												path to gamelist.xml (default '<path>/gamelist.xml',
-												will be created if not found or appended to)
-	--overwrite           existing entries in gamelist.xml will be overwritten.
-												Default is to skip existing entries
-	--img_path IMG_PATH   path to the folder where to store images (default
-												'<path>/images)'
-	--img_index IMG_INDEX
-												download image at 0-based index among available images
-												(default 0=first found, -1 tries to download boxart if
-												found or fallbacks to first image found)
-	--img_thumbnail       download image thumbnail (support depends on the
-												scraper engine)
-	--append STRING       append this string (enclosed in '' if containing
-												spaces) to the game name in the gamelist.xml file.
-												Only valid if '--path' do not refer to a folder
-	--append_auto N       automatically generate n entries starting from the
-												given one (i.e. --append_auto 2 --path=./game1.d64
-												generates 'game (disk 1)' pointing to ./game1.d64 and
-												'game (disk 2)' pointing to ./game2.d64). Only valid
-												if '--path' do not refer to a folder
-	--unattended_timeout SECONDS
-												automatically choose the first found entry after the
-												specified seconds, in case of multiple entries found
-												(default is to ask on multiple choices)
-	--dumpbin PATH        move non-scraped, not matching from '--preprocess' or
-												duplicates from '--preprocess_duplicates' files to
-												this path if specified
-	--purge REGEX         delete all the entries whose path matches the given
-												regex from the gamelist.xml (needs '--gamelist_path',
-												anything else is ignored). This also deletes the
-												affected game files!
-	--preprocess REGEX    preprocess folder at '--path' and keep only the files
-												matching the given regex (every other parameter is
-												ignored). This cleans the directory for later
-												processing by the scraper
-	--preprocess_duplicates
-												check for duplicates (and ask for deletion or moving
-												to '--dumpbin' if specified)
-	--preprocess_test     test for preprocessing options, do not delete/move
-												files
-	--debug               Print scraping result on the console
+  -h, --help            show this help message and exit
+  --list_engines        list the available engines (and their options, if any)
+  --engine [ENGINE]     the engine to use (use '--list_engines' to check
+                        available engines)
+  --engine_params [ENGINE_PARAMS]
+                        custom engine parameters, name=value[,name=value,...],
+                        default None
+  --download_url [DOWNLOAD_URL]
+                        url to download the file at '--path', which will be
+                        overwritten if existent
+  --download_no_overwrite
+                        if specified, '--download_url' do not overwrites
+  --name_from_url       if specified, '--path' must point to a destination
+                        folder and the filename is derived from '--
+                        download_url'
+  --path [PATH]         path to the file to be scraped (needs to specify '--
+                        to_search'), or to a folder with (correctly named)
+                        files to be scraped
+  --to_search [NAME]    name of the game to search for enclosed in '' if
+                        containing spaces, the more accurate the better.
+                        Default is the filename at '--path' or the one derived
+                        from '--url', stripped of extension. Ignored if '--
+                        path' refers to a folder
+  --delete_no_scraped   delete non-scraped files, ignored if '--dumpbin' is
+                        specified. Ignored if '--path' refers to a file
+  --sleep [SECONDS]     sleep random seconds (1..SECONDS) between each scraped
+                        entries when path refers to a folder. Default is 15.
+                        Ignored if '--path' refers to a file
+  --trunc_at [CHARACTERS]
+                        before using '--path' as search key, truncate at the
+                        first occurrence of any of the given characters (i.e.
+                        --path './caesar the cat, (demo) (eng).zip' --trunc_at
+                        '(,' searches for 'caesar the cat')
+  --gamelist_path [GAMELIST_PATH]
+                        path to gamelist.xml (default '<path>/gamelist.xml',
+                        will be created if not found or appended to)
+  --overwrite           existing entries in gamelist.xml will be overwritten.
+                        Default is to skip existing entries
+  --img_path [IMG_PATH]
+                        path to the folder where to store images (default
+                        '<path>/images)'
+  --img_index [IMG_INDEX]
+                        download image at 0-based index among available images
+                        (default 0=first found, -1 tries to download boxart if
+                        found or fallbacks to first image found)
+  --img_thumbnail       download image thumbnail (support depends on the
+                        scraper engine)
+  --append [STRING]     append this string (enclosed in '' if containing
+                        spaces) to the game name in the gamelist.xml file.
+                        Only valid if '--path' do not refer to a folder
+  --append_auto N       automatically generate n entries starting from the
+                        given one (i.e. --append_auto 2 --path=./game1.d64
+                        generates 'game (disk 1)' pointing to ./game1.d64 and
+                        'game (disk 2)' pointing to ./game2.d64). Only valid
+                        if '--path' do not refer to a folder
+  --unattended_timeout [SECONDS]
+                        automatically choose the first found entry after the
+                        specified seconds, in case of multiple entries found
+                        (default is to ask on multiple choices)
+  --dumpbin [PATH]      move non-scraped, not matching from '--preprocess' or
+                        duplicates from '--preprocess_duplicates' files to
+                        this path if specified
+  --purge [REGEX]       delete all the entries whose path matches the given
+                        regex from the gamelist.xml (needs '--gamelist_path',
+                        anything else is ignored). This also deletes the
+                        affected game files!
+  --preprocess [REGEX]  preprocess folder at '--path' and keep only the files
+                        matching the given regex (every other parameter is
+                        ignored). This cleans the directory for later
+                        processing by the scraper
+  --preprocess_duplicates
+                        check for duplicates (and ask for deletion or moving
+                        to '--dumpbin' if specified)
+  --preprocess_test     test for preprocessing options, do not delete/move
+                        files
+  --debug               Print scraping result on the console
 ~~~~
 
 sample usage
@@ -225,3 +238,4 @@ currently implemented modules
 todo
 ----
 - Implement more scrapers :)
+

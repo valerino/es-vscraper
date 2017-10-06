@@ -18,6 +18,7 @@ OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 """
 
 import argparse
+from urllib.parse import urlparse
 import importlib
 import os
 import re
@@ -158,8 +159,9 @@ def scrape_title(engine, args):
                 return -1
 
             # derive name from url and create path
-            basename = os.path.splitext(os.path.basename(args.url))[0]
-            args.path = os.path.join(basename, args.path)
+            parsed = urlparse(args.url)
+            filename = os.path.basename(parsed.path)
+            args.path = os.path.join(args.path, filename)
         else:
             # ensure path is a file
             if os.path.isdir(args.path):

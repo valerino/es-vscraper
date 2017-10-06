@@ -151,6 +151,21 @@ def scrape_title(engine, args):
             return -1
 
     if args.url:
+        if args.name_from_url is True:
+            # ensure path is a dir
+            if not os.path.isdir(args.path):
+                print('ERROR, --path must point to a folder!')
+                return -1
+
+            # derive name from url and create path
+            basename = os.path.splitext(os.path.basename(args.url))[0]
+            args.path = os.path.join(basename, args.path)
+        else:
+            # ensure path is a file
+            if os.path.isdir(args.path):
+                print('ERROR, --path must point to a file!')
+                return -1
+        
         # try to download from url (will overwrite)
         print('DOWNLOADING %s to %s' % (args.url, args.path))
         try:
@@ -598,15 +613,20 @@ def main():
         nargs='?')
     parser.add_argument(
         '--url',
-        help='url to download file at \'--path\'',
+        help='url to download file at \'--path\', which will be overwritten if existent',
         nargs='?')
+    parser.add_argument(
+        '--name_from_url',
+        help='if specified, \'--path\' is used as destination folder and the name is derived from \'--url\'',
+        action='store_const',
+        const=True)
     parser.add_argument(
         '--path',
         help='path to the file to be scraped (needs to specify \'--to_search\'), or to a folder with (correctly named) files to be scraped',
         nargs='?')
     parser.add_argument(
         '--to_search',
-        help='name of the game to search for enclosed in \'\' if containing spaces, the more accurate the better. Default is the filename at \'--path\' without extension. Ignored if \'--path\' refers to a folder',
+        help='name of the game to search for enclosed in \'\' if containing spaces, the more accurate the better. Default is the filename at \'--path\' or the one derived from \'--url\', stripped of extension. Ignored if \'--path\' refers to a folder and \'--url\' is not specified',
         nargs='?',
         metavar='NAME',
         default=None)
@@ -752,8 +772,7 @@ def main():
         else:
             # get module
             mod = get_scraper(args.engine)
-
-            if os.path.isdir(args.path):
+            if os.path.isdir(args.path) and args.url is None:
                 # scrape entire folder
                 scrape_folder(mod, args)
             else:

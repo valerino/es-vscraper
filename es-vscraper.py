@@ -146,9 +146,19 @@ def scrape_title(engine, args):
     """
     args.path = os.path.abspath(args.path)
     if not os.path.exists(args.path):
-        print('%s not found!' % args.path)
-        return -1
+        if not args.url:
+            print('%s not found!' % args.path)
+            return -1
 
+    if args.url:
+        # try to download from url (will overwrite)
+        print('DOWNLOADING %s to %s' % (args.url, args.path))
+        try:
+            vscraper_utils.download_file(args.url, args.path)
+        except Exception as e:
+            print('ERROR DOWNLOADING %s to %s' % (args.url, args.path))
+            return -1
+        
     if args.to_search is None:
         ts = args.path
         if args.trunc_at is not None:
@@ -585,6 +595,10 @@ def main():
         '--engine_params',
         help="custom engine parameters, name=value[,name=value,...], default None",
         default=None,
+        nargs='?')
+    parser.add_argument(
+        '--url',
+        help='url to download file at \'--path\'',
         nargs='?')
     parser.add_argument(
         '--path',

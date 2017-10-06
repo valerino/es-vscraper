@@ -24,6 +24,8 @@ import sys
 import os
 import time
 import threading
+import urllib.request
+
 if os.name == 'nt':
     import msvcrt
 
@@ -197,6 +199,27 @@ def read_from_file(path):
         buffer = f.read()
     return buffer
 
+def download_file(url, path):
+    """
+    download file from http/s url
+    :param url: the complete url i.e. http://path/to/file.zip
+    :param path: the destination path
+    :return: 
+    """
+    try:
+        os.remove(path)
+    except Exception as e:
+        pass
+    
+    # will except on error
+    urllib.request.urlretrieve(url,path)
+
+    # check if the file exists and is sane
+    size = os.path.getsize(path)
+    if size == 0:
+        os.remove(path)
+        raise Exception('Download error!')
+
 
 def img_to_png(buffer):
     """
@@ -216,3 +239,4 @@ def img_to_png(buffer):
 
     except Exception as e:
         return None
+

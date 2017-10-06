@@ -108,7 +108,7 @@ def add_game_entry(args, root, game_info):
     game.name = game_info['name']
     game.developer = game_info['developer']
     game.publisher = game_info['publisher']
-    game.desc = game_info['desc']
+    game.desc = game_info['desc'] or '-'
     game.genre = game_info['genre']
     game.releasedate = game_info['releasedate']
     game.path = os.path.abspath(game_info['path'])
@@ -580,20 +580,20 @@ def main():
     parser.add_argument(
         '--engine',
         help="the engine to use (use \'--list_engines\' to check available engines)",
-        nargs=1)
+        nargs='?')
     parser.add_argument(
         '--engine_params',
         help="custom engine parameters, name=value[,name=value,...], default None",
         default=None,
-        nargs=1)
+        nargs='?')
     parser.add_argument(
         '--path',
         help='path to the file to be scraped (needs to specify \'--to_search\'), or to a folder with (correctly named) files to be scraped',
-        nargs=1)
+        nargs='?')
     parser.add_argument(
         '--to_search',
         help='name of the game to search for enclosed in \'\' if containing spaces, the more accurate the better. Default is the filename at \'--path\' without extension. Ignored if \'--path\' refers to a folder',
-        nargs=1,
+        nargs='?',
         metavar='NAME',
         default=None)
     parser.add_argument(
@@ -605,17 +605,17 @@ def main():
         '--sleep',
         help='sleep random seconds (1..SECONDS) between each scraped entries when path refers to a folder. Default is 15',
         metavar='SECONDS',
-        nargs=1,
+        nargs='?',
         default=15)
     parser.add_argument(
         '--trunc_at',
         help='before using \'--path\' as search key, truncate at the first occurrence of any of the given characters (i.e. --path \'./caesar the cat, (demo) (eng).zip\' --trunc_at \'(,\' searches for \'caesar the cat\')',
         metavar='CHARACTERS',
-        nargs=1)
+        nargs='?')
     parser.add_argument(
         '--gamelist_path',
         help='path to gamelist.xml (default \'<path>/gamelist.xml\', will be created if not found or appended to)',
-        nargs=1)
+        nargs='?')
     parser.add_argument(
         '--overwrite',
         help='existing entries in gamelist.xml will be overwritten. Default is to skip existing entries',
@@ -624,11 +624,11 @@ def main():
     parser.add_argument(
         '--img_path',
         help='path to the folder where to store images (default \'<path>/images)\'',
-        nargs=1)
+        nargs='?')
     parser.add_argument(
         '--img_index',
         help='download image at 0-based index among available images (default 0=first found, -1 tries to download boxart if found or fallbacks to first image found)',
-        nargs=1,
+        nargs='?',
         type=int,
         default=0)
     parser.add_argument(
@@ -640,7 +640,7 @@ def main():
         '--append',
         help='append this string (enclosed in \'\' if containing spaces) to the game name in the gamelist.xml file. Only valid if \'--path\' do not refer to a folder',
         metavar='STRING',
-        nargs=1)
+        nargs='?')
     parser.add_argument(
         '--append_auto',
         help='automatically generate n entries starting from the given one (i.e. --append_auto 2 --path=./game1.d64 generates \'game (disk 1)\' pointing to ./game1.d64 and \'game (disk 2)\' pointing to ./game2.d64). Only valid if \'--path\' do not refer to a folder',
@@ -650,24 +650,24 @@ def main():
     parser.add_argument(
         '--unattended_timeout',
         help='automatically choose the first found entry after the specified seconds, in case of multiple entries found (default is to ask on multiple choices)',
-        nargs=1,
+        nargs='?',
         metavar='SECONDS',
         default=0)
     parser.add_argument(
         '--dumpbin',
         help='move non-scraped, not matching from \'--preprocess\' or duplicates from \'--preprocess_duplicates\' files to this path if specified',
         metavar='PATH',
-        nargs=1)
+        nargs='?')
     parser.add_argument(
         '--purge',
         help='delete all the entries whose path matches the given regex from the gamelist.xml (needs \'--gamelist_path\', anything else is ignored). This also deletes the affected game files!',
         metavar='REGEX',
-        nargs=1)
+        nargs='?')
     parser.add_argument(
         '--preprocess',
         help='preprocess folder at \'--path\' and keep only the files matching the given regex (every other parameter is ignored). This cleans the directory for later processing by the scraper',
         metavar='REGEX',
-        nargs=1)
+        nargs='?')
     parser.add_argument(
         '--preprocess_duplicates',
         help='check for duplicates (and ask for deletion or moving to \'--dumpbin\' if specified)',
